@@ -1,0 +1,21 @@
+{
+    "collab_server" : "",
+    "contents" : "#' pred_assess\n#' \n#' MAIN cross validation assessment. There are 2 main usage modes. 1) provide predictions by setting pred and truth, 2) provide mod and dat to generate predictions to evaluate.\n#' @param resp, a character vector of the names of dependent/response variables in df\n#' @param pred, option 1 parameter: matrix of predictions (observations x fold)\n#' @param truth, option 1 parameter: matrix of ground truth values (observations x fold)\n#' @param mod, option 2 parameter: a trained model: glm(resp~...) or lm(resp~...)\n#' @param dat, option 2 parameter: a data.frame containing all variables used in the mod model.\n#' @return list of performance assessments\n#' @export\npred_assess<-function(resp,pred=NULL,truth=NULL,mod=NULL,dat=NULL,...){\n  if( !is.null(dat) & !is.null(resp) ){\n    if(any(!all.vars(mod$formula)%in%colnames(dat))){stop('all variables used in mod must be in columns in dat')}\n    pred = predict(mod,dat)\n    truth = dat[[resp]]\n  }else if( is.null(pred) | is.null(truth) ){\n    stop('either (pred & truth) or (mod & dat) must be defined')\n  }\n  # clean\n  tmp = na.omit(data.frame(pred=pred,truth=truth))\n  if(sum(!is.finite(as.vector(unlist(tmp))))>0){stop(paste(sum(!is.finite(as.vector(unlist(tmp)))),'elements of pred and truth are not finite (inf,na,nan)'))}\n  pred = data.matrix(tmp[,grepl('pred',colnames(tmp))])\n  truth= data.matrix(tmp[,grepl('truth',colnames(tmp))])\n  #tmp<<-tmp\n  \n  #check for zero variance\n  if(any(apply(pred,2,sd)==0)){\n    warning('zero variance predictions')\n    return(NULL)\n  }\n  \n  # assessment    \n  auc=ROC( predictions=pred , truth=truth , resp=c('auc') )\n  auc = signif(unlist(auc@y.values),3)\n  par(mfrow = c(2,2))\n  roc=ROC( predictions=pred , truth=truth , resp=c('tpr','fpr') , abline=T, ... )\n  if(length(auc)==1){\n    text(paste('AUC:',signif(auc,3)),x=.3,y=.4)\n  }else{\n    text(paste('AUC: mean=',signif(mean(auc),2),', sd=',signif(sd(auc),2),sep=''),x=.6,y=.05)\n  }\n  predvalue1=ROC( predictions=pred , truth=truth , resp=c('ppv','npv'), abline=F, ... )\n  predvalue2=ROC( predictions=pred , truth=truth , resp=c('prec','rec'), abline=F, ... )\n  mcc=ROC( predictions=pred , truth=truth , resp=c('phi'),add=F )\n  \n  out=list(auc=auc,roc=roc,ppv_npv=predvalue1,prec_rec=predvalue2,mcc=mcc)\n  out\n}\n\n#' @import ROCR\nROC <- function( predictions , truth , resp=c('tpr','fpr') , sign=c('+','+'), abline=TRUE ,...){\n  pred <- prediction( predictions, truth )\n  if(length(resp)==1){\n    perf = performance(pred, measure = resp) \n    #        if(sign[1]=='-'){ perf@x.values = rev(perf@x.values) }\n    if(resp!='auc'){\n      try( plot(perf , ...) ) \n    }\n  }else if(length(resp)==2){\n    perf <- performance( pred, resp[1], resp[2])\n    #        if(sign[1]=='-'){ perf@x.values = rev(perf@x.values) }\n    #        if(sign[2]=='-'){ perf@y.values = rev(perf@y.values) }\n    plot( perf , colorize=TRUE , ...)\n    if(abline){ abline(a=0, b= 1) }\n  }else{\n    stop('resp may only have 1 or 2 values')\n  }\n  return(perf)\n}\n\n",
+    "created" : 1474501678241.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "1349850836",
+    "id" : "5497066C",
+    "lastKnownWriteTime" : 1474503939,
+    "last_content_update" : 1474503939293,
+    "path" : "~/Desktop/RegressionModelPipeline/R/performance_assessment.r",
+    "project_path" : "R/performance_assessment.r",
+    "properties" : {
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 6,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

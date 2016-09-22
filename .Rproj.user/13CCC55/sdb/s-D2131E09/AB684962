@@ -1,0 +1,21 @@
+{
+    "collab_server" : "",
+    "contents" : "#' cross_valid_kfold\n#' \n#' MAIN cross validation function. Includes performance assessment. Runs and assesses crossvalidation.\n#' @param data, a data.frame containing response and observations variables used in the formula.\n#' @param formula, relation of response ~ observation to be examined.\n#' @param resp, a character vector of the names of dependent/response variables in df\n#' @param family, a character string indicating the family associated with the submitted model c('gaussian','binomial','poisson'...)\n#' @param K, a numeric variable indicating the number of folds for the k-fold validation\n#' @param model, a model associated for testing the variables c(glm,lm)\n#' @param cv_function, a crossvalidation function with the same inputs/outputs as cross_valid_kfold\n#' @return list of performance assessments\n#' @export\ncross_assess_wrapper<-function(data,formula,resp,family,K,model,cv_function=cross_valid_kfold){\n  # crossfold validation\n  out = cv_function(data=data,formula=formula,resp=resp,family=family,K=K,model=model)\n  if(nrow(out$pred_out)!=nrow(out$labels_out)){\n    out <<- list(data=df,formula=formula,resp=resp,family=family,K=K,model=model,out=out)\n    stop('prediction and truth must be the same dimension')\n  }\n  if(family=='binomial'){\n    # assessment\n    out=pred_assess(resp=resp,pred=out$pred_out,truth=out$labels_out,xlim=c(0,1),ylim=c(0,1)) \n  }else{\n    truth=out$labels_out; pred=out$pred_out; corp=list();cors=list(); rmse=list()\n    for(i in 1:ncol(truth)){\n      corp[[i]] = cor( truth[,i],pred[,i] , method='pearson' )\n      cors[[i]] = cor( truth[,i],pred[,i] , method='spearman' )\n      rmse[[i]] = rmse( truth[,i],pred[,i] )\n    }\n    par(mfrow=c(1,2))\n    boxplot(list(RMSE=unlist(rmse)),ylab='RMSE')\n    boxplot(list(Pearson=unlist(corp),Spearman=unlist(cors)),ylab='Correlation')\n    out = list(pearson=corp,spearmen=cors,rmse=rmse)\n  }\n  out\n}\n\nrmse <- function(y,yh){\n  sqrt(mean( (yh-y)^2 ))\n}\n\n#' cross_valid_kfold\n#' \n#' k-fold cross validation run to collect predictions for assessment\n#' @param data, a data.frame containing response and observations variables used in the formula.\n#' @param formula, relation of response ~ observation to be examined.\n#' @param resp, a character vector of the names of dependent/response variables in df\n#' @param family, a character string indicating the family associated with the submitted model c('gaussian','binomial','poisson'...)\n#' @param K, a numeric variable indicating the number of folds for the k-fold validation\n#' @param model, a model associated for testing the variables c(glm,lm)\n#' @return list of cross-validation results: pred_out matrix of predictions (observations x fold), train_out matrix of indicies used for each fold of cross-validation (observations x fold), labels_out matrix of ground truth labels (observations x fold)\n#' @export\ncross_valid_kfold <- function(data,formula,resp=all.vars(formula)[1],family,K=10,model=glm){\n  K=K+1\n  ind = sample(1:nrow(data))\n  interval = floor(nrow(data)/K)\n  ranges = seq(1,nrow(data),interval)\n  pred = list(); train = list(); labels = list()\n  for(k in 1:(K-1)){\n    low = ranges[k] ; high = ranges[k+1]\n    valid_ind = ind[low:(high-1)]\n    train_ind = ind[!ind %in% valid_ind]\n    glm_i = model( formula , data=data[train_ind,] , family=family)\n    pred[[as.character(k)]] = predict(glm_i,newdata=data[valid_ind,])\n    train[[as.character(k)]] = train_ind\n    labels[[as.character(k)]] = data[valid_ind,resp]\n  }\n  return(list(\n    pred_out = do.call(cbind,pred),\n    train_out = do.call(cbind,train),\n    labels_out = do.call(cbind,labels)\n  ))\n} \n",
+    "created" : 1474500663736.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "1695428604",
+    "id" : "AB684962",
+    "lastKnownWriteTime" : 1474503103,
+    "last_content_update" : 1474503103004,
+    "path" : "~/Desktop/RegressionModelPipeline/R/cross_validation.r",
+    "project_path" : "R/cross_validation.r",
+    "properties" : {
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 5,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

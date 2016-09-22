@@ -1,0 +1,21 @@
+{
+    "collab_server" : "",
+    "contents" : "# TODO: IMPLIMENT CONTEXT VARIABLE\n\n\n#' univariate_screen\n#' \n#' Run univariate models on all observations variables with respect to response. Asseses p-value of model given LRT or Wald test. Returns all models or just models more significant than the given threshold: thresh.\n#' @param df, a data.frame containing response and observations variables. Factors with more than 2 levels have only been implimented for test='LRT'\n#' @param observations, a character vector of the names of independent/observations variables in df\n#' @param response, a character vector of the names of dependent/response variables in df\n#' @param family, a character string indicating the family associated with the submitted model c('gaussian','binomial','poisson'...)\n#' @param model, a model associated for testing the variables c(glm,lm)\n#' @param interactions, a boolean indicating if interactions should be assessed. Default is False.\n#' @param test, a character string indicating Likelihood Ratio Test ('LRT') testing likelihood improvement of a model or Wald test ('Wald') testing coefficient > 0\n#' @param thresh, a numeric value indicating the p-value cutoff for the univariate screening\n#' @param only_return_selected, a boolean value. If true, only models with p-value less than the threshold will be returned. Otherwise, all models will be returned.\n#' @param context_var, a character vector of variable(s) necessary for contextual assessment (e.g. age or time)\n#' @return a list of univariate models, attr(,'Pr') houses the significance of each model\n#' @export\nunivariate_screen <- function(df,observations,response,family='gaussian',model=glm,interactions=FALSE,test='LRT',thresh=.2,only_return_selected=FALSE,context_var=NULL){\n  # checks\n  if(any(!c(observations,response)%in%colnames(df))){stop(paste(c(observations,response)[!c(observations,response)%in%colnames(df)],'not found in df'))}\n  if(!is.null(context_var)){warning('context_var is not yet implimented')}\n  if( any( unlist(lapply(df,function(x) ifelse(is.factor(x),length(levels(x))>2,TRUE) ) ) ) ){\n    if(test!='LRT'){ stop( \"Factors with more than 2 levels have only been implimented for test='LRT'\" ) }\n  }\n  # run univariate models\n  mL <- list()\n  Pr <- c()\n  for(obs in observations){\n    print(obs)\n    mod1 = NULL\n    try( mod1 <- model(as.formula(paste(response,'~',obs)),family=family,data=df) )\n    if(!is.null(mod1)){\n      Pr <- get_Pr(Pr,test,mod1)\n      mL[[obs]] <- mod1\n    }\n  }\n#  if(interactions!='none'){\n#    if(interactions=='signif'){\n#      observations_sel = observations[Pr<thresh]\n#    }else if(interactions=='all'){\n#      observations_sel = observations\n#    }else{stop('interactions is not in c(none,signif,all)')}\n#    inter = univariate_screen_interactions(df,observations_sel,response,family,model,test)\n#    Pr = c(Pr,attr(inter,'Pr'))\n#    mL = c(mL,inter)\n#  }\n  if(only_return_selected){\n    mL = mL[Pr<thresh]\n    attr(mL,'Pr') = Pr[Pr<thresh]\n  }else{\n    attr(mL,'Pr') = Pr\n  }\n  attr(mL,'test') = test\n  mL\n}\n\nget_Pr <- function(Pr,test,mod1,mod0=NULL){\n  if(is.null(mod0)){\n    if(tolower(test)=='wald'){\n      warning('LRT is generally preferred')\n      Pr = c(Pr,coef(summary(mod1))[2,4])\n    }else if(tolower(test)=='lrt'){\n      Pr = c(Pr,anova(mod1,test='LRT')[2,5])\t\t\t\n    }else{stop('test is not in c(Wald,LRT)')}\n  }else{\n    if(tolower(test)=='wald'){\n      warning('LRT is generally preferred')\n      Pr = c(Pr,coef(summary(mod1))[4,4])\n    }else if(tolower(test)=='lrt'){\n      Pr = c(Pr,anova(mod0,mod1,test='LRT')[2,5])\t\t\t\n    }\n  }\n  return(Pr)\n}",
+    "created" : 1474500361644.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "1452476026",
+    "id" : "8A4E8E6C",
+    "lastKnownWriteTime" : 1474503537,
+    "last_content_update" : 1474503537415,
+    "path" : "~/Desktop/RegressionModelPipeline/R/univariate_screen.r",
+    "project_path" : "R/univariate_screen.r",
+    "properties" : {
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 4,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}
