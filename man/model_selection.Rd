@@ -6,7 +6,8 @@
 \usage{
 model_selection(df, observations, response, family = "gaussian",
   model = glm, interactions = FALSE, test = c("Wald", "LRT"),
-  thresh_screen = 0.2, only_return_selected = FALSE, K = 10)
+  thresh_screen = 0.2, only_return_selected = FALSE, K = 10,
+  sig_vars_thresh = NULL)
 }
 \arguments{
 \item{df, }{a data.frame containing response and observations variables. Factors with more than 2 levels have only been implimented for test='LRT'}
@@ -19,7 +20,7 @@ model_selection(df, observations, response, family = "gaussian",
 
 \item{model, }{a model associated for testing the variables c(glm,lm)}
 
-\item{interactions, }{a boolean indicating if interactions should be assessed. Default is False.}
+\item{interactions, }{a boolean indicating if interactions should be assessed. Default is NULL, by default, interactions will be examined according to the constraints set by sig_vars_thresh. If a value is set for interactions (T/F) this will override the recomendations of sig_vars_thresh}
 
 \item{test, }{a character string indicating Likelihood Ratio Test ('LRT') testing likelihood improvement of a model or Wald test ('Wald') testing coefficient > 0}
 
@@ -28,6 +29,8 @@ model_selection(df, observations, response, family = "gaussian",
 \item{only_return_selected, }{a boolean value. If true, only models with p-value less than the threshold will be returned. Otherwise, all models will be returned.}
 
 \item{K, }{a numeric value indicating the number of folds to use for k-fold cross-validation. K=10 by default. K=0 to skip k-fold validation.}
+
+\item{sig_vars_thresh}{a list specifying the maximal number of significant variables allowed for each final model generating method. NULL (self initializing) by default.}
 }
 \value{
 a list containing: univariate models, the final selected model, and crossvalidation stats.
