@@ -18,7 +18,7 @@ library(RegressionModelPipeline)
 
 Then run the first example
 ``` R
-mod=model_selection(df=mtcars,colnames(mtcars)[-1],response = 'mpg',interactions=F,test='LRT',K=5,family = 'gaussian',model=glm)
+mod=model_selection(df=mtcars,colnames(mtcars)[-1],response = 'mpg',test='LRT',K=5,family = 'gaussian',model=glm)
 out=vis(mod)
 out[[1]] # multivariate model visual
 out[[2]] # univariate screening visual
