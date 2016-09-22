@@ -41,31 +41,42 @@ model_selection <- function(df,observations,response,family='gaussian',model=glm
   if(is.null(interactions)){
     if(length(obs_sign) < sig_vars_thresh$model_sel_interaction){
       interactions=TRUE
+      print('interactive model: selection')
     }else if(length(obs_sign) < sig_vars_thresh$model_sel_additive){
       interactions=FALSE
+      print('additive model: selection')
     }else if(length(obs_sign) < sig_vars_thresh$glmnet_interaction){
-      glm_reg = glinternet
+      #glm_reg = glinternet ## not yet implimented
+      glm_reg = cv.glmnet
+      print('interactive model: regularization')
     }else if(length(obs_sign) < sig_vars_thresh$glmnet_additive){
-      glm_reg = glmnet
+      glm_reg = cv.glmnet
+      print('additive model: regularization')
     }
   }
   # construct multivariate models
-  if(length(obs_sig) < sig_vars_thresh$model_sel_additive){
-    selected_model = stepwise_multivariate_model_selection(df,obs_sig,response,family,model,interactions)
-  }else if(length(obs_sig) < sig_vars_thresh$glmnet_additive){
-    #selected_model = glm_reg(...) ## todo
+  if(length(obs_sign) < sig_vars_thresh$model_sel_additive){
+    selected_model = stepwise_multivariate_model_selection(df,obs_sign,response,family,model,interactions)
   }else{
+    selected_model = glm_reg(y=df[,response],x=data.matrix(df[,obs_sign]),family=family) ## untested
+  }
+  if(length(obs_sign) > sig_vars_thresh$glmnet_additive){
     warning(paste(length(obs_sign),'is a large number of variables that may pose a relative challenge to glmnet'))
-    #selected_model = glm_reg(...) ## todo
   }
 
   # Model Diagnostics
 
   # Cross Validation
-  if(K>1){
-    cv=cross_assess_wrapper(data=df,formula=selected_model$formula,resp=response,family=family,K,model,cv_function=cross_valid_kfold)
+  if(length(obs_sign) < sig_vars_thresh$model_sel_additive){
+    if(K>1){
+      cv=cross_assess_wrapper(data=df,formula=selected_model$formula,resp=response,family=family,K,model,cv_function=cross_valid_kfold)
+    }else{
+      cv=NULL
+    }
   }else{
-    cv=NULL
+    # cross validation for regularization
+    plot(selected_model)
+    cv = list(auc=selected_model$cvm[selected_model$lambda==selected_model$lambda.min],other_stats=selected_model)
   }
   
   return(list(screen=observationsL,final=selected_model,cv=cv))
@@ -80,18 +91,24 @@ iris_test<-function(){
 mtcars_tests <- function(){
   #	source('~/Desktop/modeling_functions.r')
   K=5
-  mod=model_selection(df=mtcars,colnames(mtcars)[-1],response = 'mpg',interactions=F,test='LRT',K=5,family = 'gaussian',model=glm)
+  inter=NULL
+  
+  mod=model_selection(df=mtcars,colnames(mtcars)[-1],response = 'mpg',interactions=inter,test='LRT',K=5,family = 'gaussian',model=glm)
   out=vis(mod)
   out[[1]]
   out[[2]]
+  dev.off()
+  sig_vars_thresh = list(model_sel_interaction=6,model_sel_additive=7,glmnet_interaction=200,glmnet_additive=2000) # see regularization output (lower upper bound for additive model selection)
+  mod=model_selection(df=mtcars,colnames(mtcars)[-1],response = 'mpg',interactions=inter,test='LRT',K=5,family = 'gaussian',model=glm,sig_vars_thresh=sig_vars_thresh)
   
-  mod=model_selection(df=mtcars,colnames(mtcars)[-1],response = 'mpg',interactions=F,test='LRT',family='poisson',K=K,thresh_screen = .05)
+  
+  mod=model_selection(df=mtcars,colnames(mtcars)[-1],response = 'mpg',interactions=inter,test='LRT',family='poisson',K=K,thresh_screen = .05)
 
   
-  mod=model_selection(df=mtcars,colnames(mtcars)[-1],response = 'mpg',interactions=F,test='Wald',K=K)
-  mod=model_selection(df=mtcars,colnames(mtcars)[-1],response = 'mpg',interactions=T,test='LRT',K=K)
-  mod=model_selection(df=mtcars,colnames(mtcars)[-1],response = 'mpg',interactions=T,test='LRT',only_return_selected=FALSE,K=K)
+  mod=model_selection(df=mtcars,colnames(mtcars)[-1],response = 'mpg',interactions=inter,test='Wald',K=K)
+  mod=model_selection(df=mtcars,colnames(mtcars)[-1],response = 'mpg',interactions=inter,test='LRT',K=K)
+  mod=model_selection(df=mtcars,colnames(mtcars)[-1],response = 'mpg',interactions=inter,test='LRT',only_return_selected=FALSE,K=K)
   
   mtcars$log_mpg = log(mtcars$mpg)
-  mod=model_selection(df=mtcars,colnames(mtcars)[-1],response = 'log_mpg',interactions=F,test='LRT',K=K)
+  mod=model_selection(df=mtcars,colnames(mtcars)[-1],response = 'log_mpg',interactions=inter,test='LRT',K=K)
 }
