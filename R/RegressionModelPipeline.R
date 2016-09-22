@@ -8,11 +8,12 @@
 #' @param response, a character vector of the names of dependent/response variables in df
 #' @param family, a character string indicating the family associated with the submitted model c('gaussian','binomial','poisson'...)
 #' @param model, a model associated for testing the variables c(glm,lm)
-#' @param interactions, a boolean indicating if interactions should be assessed. Default is False.
+#' @param interactions, a boolean indicating if interactions should be assessed. Default is NULL, by default, interactions will be examined according to the constraints set by sig_vars_thresh. If a value is set for interactions (T/F) this will override the recomendations of sig_vars_thresh
 #' @param test, a character string indicating Likelihood Ratio Test ('LRT') testing likelihood improvement of a model or Wald test ('Wald') testing coefficient > 0
 #' @param thresh_screen, a numeric value indicating the p-value cutoff for the univariate screening
 #' @param only_return_selected, a boolean value. If true, only models with p-value less than the threshold will be returned. Otherwise, all models will be returned.
 #' @param K, a numeric value indicating the number of folds to use for k-fold cross-validation. K=10 by default. K=0 to skip k-fold validation.
+#' @param sig_vars_thresh a list specifying the maximal number of significant variables allowed for each final model generating method. NULL (self initializing) by default.
 #' @return a list containing: univariate models, the final selected model, and crossvalidation stats.
 #' @export
 #' @examples
@@ -20,16 +21,43 @@
 #' out=vis(mod)
 #' print(out[[1]])
 #' print(out[[2]])
-model_selection <- function(df,observations,response,family='gaussian',model=glm,interactions=FALSE,test=c('Wald','LRT'),thresh_screen=.2,only_return_selected=FALSE,K=10){
+#' @import glmnet
+#' @import glinternet
+model_selection <- function(df,observations,response,family='gaussian',model=glm,interactions=FALSE,test=c('Wald','LRT'),thresh_screen=.2,only_return_selected=FALSE,K=10,sig_vars_thresh=NULL){
   if(length(response)!=1){stop('use multiresponse_model_selection()')}
   if(!test%in%c('Wald','LRT')){stop("test is not in c(Wald,LRT)")}
   #if(!interactions%in%c('signif','none','all')){stop("interactions is not in c(signif,none,all)")}
+  if(is.null(sig_vars_thresh)){
+    sig_vars_thresh = list(model_sel_interaction=6,model_sel_additive=25,glmnet_interaction=200,glmnet_additive=2000)
+  }
   
   # Univariate Screen
   observationsL <<- univariate_screen(df,observations,response,family,model,interactions,test,thresh=thresh_screen,only_return_selected=only_return_selected)
   
   # Multivariate Model
-  selected_model = stepwise_multivariate_model_selection(df,names(observationsL)[attr(observationsL,'Pr')<thresh_screen],response,family,model,interactions)
+  obs_sign = na.omit( names(observationsL)[attr(observationsL,'Pr')<thresh_screen] )
+  if( length( obs_sign ) == 0 ){ stop("There are no observations that pass the threshold set by thresh_screen. Consider increasing thresh_screen.")}
+  # set interaction based on the number of variables passing the screening threshold
+  if(is.null(interactions)){
+    if(length(obs_sign) < sig_vars_thresh$model_sel_interaction){
+      interactions=TRUE
+    }else if(length(obs_sign) < sig_vars_thresh$model_sel_additive){
+      interactions=FALSE
+    }else if(length(obs_sign) < sig_vars_thresh$glmnet_interaction){
+      glm_reg = glinternet
+    }else if(length(obs_sign) < sig_vars_thresh$glmnet_additive){
+      glm_reg = glmnet
+    }
+  }
+  # construct multivariate models
+  if(length(obs_sig) < sig_vars_thresh$model_sel_additive){
+    selected_model = stepwise_multivariate_model_selection(df,obs_sig,response,family,model,interactions)
+  }else if(length(obs_sig) < sig_vars_thresh$glmnet_additive){
+    #selected_model = glm_reg(...) ## todo
+  }else{
+    warning(paste(length(obs_sign),'is a large number of variables that may pose a relative challenge to glmnet'))
+    #selected_model = glm_reg(...) ## todo
+  }
 
   # Model Diagnostics
 
