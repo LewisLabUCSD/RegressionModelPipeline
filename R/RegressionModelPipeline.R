@@ -14,6 +14,7 @@
 #' @param only_return_selected, a boolean value. If true, only models with p-value less than the threshold will be returned. Otherwise, all models will be returned.
 #' @param K, a numeric value indicating the number of folds to use for k-fold cross-validation. K=10 by default. K=0 to skip k-fold validation.
 #' @param sig_vars_thresh a list specifying the maximal number of significant variables allowed for each final model generating method. NULL (self initializing) by default.
+#' @param robust boolean indicating if regularization will be run multiple times to get a robust indication of the underlying structure
 #' @return a list containing: univariate models, the final selected model, and crossvalidation stats.
 #' @export
 #' @examples
@@ -23,7 +24,7 @@
 #' print(out[[2]])
 #' @import glmnet
 #' @import glinternet
-model_selection <- function(df,observations,response,family='gaussian',model=glm,interactions=FALSE,test=c('Wald','LRT'),thresh_screen=.2,only_return_selected=FALSE,K=10,sig_vars_thresh=NULL){
+model_selection <- function(df,observations,response,family='gaussian',model=glm,interactions=FALSE,test=c('Wald','LRT'),thresh_screen=.2,only_return_selected=FALSE,K=10,sig_vars_thresh=NULL,robust=FALSE){
   if(length(response)!=1){stop('use multiresponse_model_selection()')}
   if(!test%in%c('Wald','LRT')){stop("test is not in c(Wald,LRT)")}
   #if(!interactions%in%c('signif','none','all')){stop("interactions is not in c(signif,none,all)")}
@@ -58,7 +59,16 @@ model_selection <- function(df,observations,response,family='gaussian',model=glm
   if(length(obs_sign) < sig_vars_thresh$model_sel_additive){
     selected_model = stepwise_multivariate_model_selection(df,obs_sign,response,family,model,interactions)
   }else{
-    selected_model = glm_reg(y=df[,response],x=data.matrix(df[,obs_sign]),family=family) ## untested
+    if(robust){ # run glmnet several times
+      selected_model_list = list()
+      for(i in 1:500){
+        indx = sample(1:nrow(df)) # randomize 
+        indy = sample(1:length(obs_sign)) # randomize 
+        selected_model_list[[i]] = glm_reg(y=df[indx,response],x=data.matrix(df[indx,obs_sign[indy]]),family=family) ## untested
+      }
+    }else{
+      selected_model = glm_reg(y=df[,response],x=data.matrix(df[,obs_sign]),family=family) ## untested
+    }
   }
   if(length(obs_sign) > sig_vars_thresh$glmnet_additive){
     warning(paste(length(obs_sign),'is a large number of variables that may pose a relative challenge to glmnet'))
@@ -74,13 +84,22 @@ model_selection <- function(df,observations,response,family='gaussian',model=glm
       cv=NULL
     }
   }else{
-    # cross validation for regularization
-    plot(selected_model)
-    cv = list(auc=selected_model$cvm[selected_model$lambda==selected_model$lambda.min],other_stats=selected_model)
+    if(robust){
+      # multi-model characterization
+      selected_model = vis_reg(selected_model_list)
+    }else{
+      # cross validation for regularization
+      plot(selected_model)
+      cv = list(auc=selected_model$cvm[selected_model$lambda==selected_model$lambda.min],other_stats=selected_model)
+    }
   }
   
   return(list(screen=observationsL,final=selected_model,cv=cv))
 }
+
+#' model_selection_many_to_few
+#' 
+#' Takes many variables and uses a series of regularizations then model selection to pair down to a smaller set
 
 #######################################
 ### Run Tests
@@ -111,4 +130,10 @@ mtcars_tests <- function(){
   
   mtcars$log_mpg = log(mtcars$mpg)
   mod=model_selection(df=mtcars,colnames(mtcars)[-1],response = 'log_mpg',interactions=inter,test='LRT',K=K)
+}
+
+glmnet_test<-function(){
+  sig_vars_thresh = list(model_sel_interaction=1,model_sel_additive=1,glmnet_interaction=1,glmnet_additive=1e5)
+  robust=TRUE
+  
 }

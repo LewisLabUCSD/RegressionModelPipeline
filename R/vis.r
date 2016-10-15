@@ -173,6 +173,43 @@ vis_logit <- function(out,Pr=NULL,fullUnivariate=FALSE,intercept=TRUE,trans='log
   return(list(multivar=multi,univar=uni))
 }
 
+#' vis_reg
+#' 
+#' Visualize prototypical models for glmnets
+#' @param l_reg list of glmnet.cv objects
+#' @param k number of prototype models to extract
+#' @return most prototypical models
+vis_reg <- function(l_reg,k=4){
+  # check that l_reg is multiple glmnet.cv objects
+  if(!(length(l_reg)>1 & all(sapply(l_reg,class)=='glmnet.cv'))){stop('l_reg must be multiple glmnet.cv objects')}
+  # make matrix of coefficients
+  l=lapply(l_reg,function(x) data.matrix(coef(x,s=x$labda_min+.1*perc_change(x$labda_min,x$lambda_max))))
+  l=lapply(l,function(x) x[order(rownames(x)),])
+  m=do.call(rbind,l)
+  # cluster
+  fit = hclust(dist(m))
+  # cut
+  groups = cutree(fit, k=k) # todo, choose k riggerously
+  # get average coefficient for each gene in each group
+  m$groups = groups
+  melt_m = melt(m)
+  colnames(melt_m) = c('groups','model_number','gene','coefficient')
+  ggplot(data=melt_m,aes(x=coefficient,y=gene)) + geom_bar() + facet_wrap(~groups)
+  
+  # return k models that are the centroids (most average) of each major cluster
+  sel_return=list()
+  for(g in groups){
+    m_tmp = m[,g==groups]
+    mean = apply(m_tmp,2,mean) #avg for each gene coefficient
+    sd = apply(m_tmp,2,sd) #avg for each gene coefficient
+    z = apply(m_tmp,1,function(x) sum(abs((x-mean)/sd)) )
+    indx_tmp = which.min(z)
+    # change back to original index -> indx
+    sel_return[[g]] = l_reg[[indx]]
+  }
+  return(sel_return)
+}
+
 
 #' loading_vis
 #' 
