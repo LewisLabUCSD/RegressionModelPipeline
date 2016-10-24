@@ -15,6 +15,7 @@
 #' @param K, a numeric value indicating the number of folds to use for k-fold cross-validation. K=10 by default. K=0 to skip k-fold validation.
 #' @param sig_vars_thresh a list specifying the maximal number of significant variables allowed for each final model generating method. NULL (self initializing) by default.
 #' @param robust boolean indicating if regularization will be run multiple times to get a robust indication of the underlying structure
+#' @param N, a numeric value, default N=1, indicating the number of cross validation iterations to perform
 #' @return a list containing: univariate models, the final selected model, and crossvalidation stats.
 #' @export
 #' @examples
@@ -24,7 +25,7 @@
 #' print(out[[2]])
 #' @import glmnet
 #' @import glinternet
-model_selection <- function(df,observations,response,family='gaussian',model=glm,interactions=FALSE,test=c('Wald','LRT'),thresh_screen=.2,only_return_selected=FALSE,K=10,sig_vars_thresh=NULL,robust=FALSE){
+model_selection <- function(df,observations,response,family='gaussian',model=glm,interactions=FALSE,test=c('Wald','LRT'),thresh_screen=.2,only_return_selected=FALSE,K=10,sig_vars_thresh=NULL,robust=FALSE,N=1){
   if(length(response)!=1){stop('use multiresponse_model_selection()')}
   if(!test%in%c('Wald','LRT')){stop("test is not in c(Wald,LRT)")}
   #if(!interactions%in%c('signif','none','all')){stop("interactions is not in c(signif,none,all)")}
@@ -79,7 +80,7 @@ model_selection <- function(df,observations,response,family='gaussian',model=glm
   # Cross Validation
   if(length(obs_sign) < sig_vars_thresh$model_sel_additive){
     if(K>1){
-      cv=cross_assess_wrapper(data=df,formula=selected_model$formula,resp=response,family=family,K,model,cv_function=cross_valid_kfold)
+      cv=cross_assess_wrapper(data=df,formula=selected_model$formula,resp=response,family=family,K,model,cv_function=cross_valid_kfold,N=N)
     }else{
       cv=NULL
     }

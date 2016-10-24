@@ -8,11 +8,12 @@
 #' @param K, a numeric variable indicating the number of folds for the k-fold validation
 #' @param model, a model associated for testing the variables c(glm,lm)
 #' @param cv_function, a crossvalidation function with the same inputs/outputs as cross_valid_kfold
+#' @param N, a numeric value indicating the number of times to run cross-validation
 #' @return list of performance assessments
 #' @export
-cross_assess_wrapper<-function(data,formula,resp,family,K,model,cv_function=cross_valid_kfold){
+cross_assess_wrapper<-function(data,formula,resp,family,K,model,cv_function=cross_valid_kfold,N=1){
   # crossfold validation
-  out = cv_function(data=data,formula=formula,resp=resp,family=family,K=K,model=model)
+  out <<- cv_function(data=data,formula=formula,resp=resp,family=family,K=K,model=model,N=N)
   if(nrow(out$pred_out)!=nrow(out$labels_out)){
     out <<- list(data=df,formula=formula,resp=resp,family=family,K=K,model=model,out=out)
     stop('prediction and truth must be the same dimension')
@@ -48,22 +49,26 @@ rmse <- function(y,yh){
 #' @param family, a character string indicating the family associated with the submitted model c('gaussian','binomial','poisson'...)
 #' @param K, a numeric variable indicating the number of folds for the k-fold validation
 #' @param model, a model associated for testing the variables c(glm,lm)
+#' @param N, a numeric value indicating the number of times to run cross-validation
 #' @return list of cross-validation results: pred_out matrix of predictions (observations x fold), train_out matrix of indicies used for each fold of cross-validation (observations x fold), labels_out matrix of ground truth labels (observations x fold)
 #' @export
-cross_valid_kfold <- function(data,formula,resp=all.vars(formula)[1],family,K=10,model=glm){
+cross_valid_kfold <- function(data,formula,resp=all.vars(formula)[1],family,K=10,model=glm,N=1){
   K=K+1
   ind = sample(1:nrow(data))
   interval = floor(nrow(data)/K)
   ranges = seq(1,nrow(data),interval)
   pred = list(); train = list(); labels = list()
+  for(n in 1:N){
   for(k in 1:(K-1)){
     low = ranges[k] ; high = ranges[k+1]
     valid_ind = ind[low:(high-1)]
     train_ind = ind[!ind %in% valid_ind]
     glm_i = model( formula , data=data[train_ind,] , family=family)
-    pred[[as.character(k)]] = predict(glm_i,newdata=data[valid_ind,])
-    train[[as.character(k)]] = train_ind
-    labels[[as.character(k)]] = data[valid_ind,resp]
+    iter_name=paste0(as.character(n),'_',as.character(k))
+    pred[[iter_name]] = predict(glm_i,newdata=data[valid_ind,])
+    train[[iter_name]] = train_ind
+    labels[[iter_name]] = data[valid_ind,resp]
+  }
   }
   return(list(
     pred_out = do.call(cbind,pred),
