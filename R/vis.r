@@ -69,9 +69,18 @@ vis <- function(out,family='gaussian',Pr=NULL,fullUnivariate=FALSE,intercept=TRU
       if(!is.na(coef(screen[[i]])[2])){ screen_tmp[[i]] = screen[[i]] }
     }
     screen = screen_tmp
-    screen_df = as.data.frame( cbind( do.call(rbind,lapply(screen,function(x) coef(summary(x))[2,]  ) ) , 
-                                      do.call(rbind,lapply(screen,function(x) cbind(coefficients = coef(x), confint(x))[2,]  ) )
-    ) )
+#    screen_df = as.data.frame( cbind( do.call(rbind,lapply(screen,function(x) coef(summary(x))[2,]  ) ) , 
+#                                      do.call(rbind,lapply(screen,function(x) cbind(coefficients = coef(x), confint(x))[2,]  ) )
+#    ) )
+    if(class(screen[[1]])%in%c('glm','lm')){
+      screen_df = as.data.frame( cbind( do.call(rbind,lapply(screen,function(x) coef(summary(x))[2,] ) ) , 
+                                        do.call(rbind,lapply(screen,function(x) cbind(coefficients = coef(x), confint(x))[2,] ) )
+      ) )
+    }else if(class(screen[[1]])%in%c('glmerMod')){
+      screen_df = as.data.frame( cbind( do.call(rbind,lapply(screen,function(x) coef(summary(x))[2,] ) ) , 
+                                        do.call(rbind,lapply(screen,function(x) cbind(coefficients=coef(summary(x))[,1], confint(x)[-1,])[2,] ) )
+      ) )
+    }
     screen_df$vars = factor( rownames(screen_df) , levels = rownames(screen_df)[order(screen_df$Estimate)] )
     colnames(screen_df)[c(4,6:7)] = c('Pr', 'X2.5','X97.5')
     if(!is.null(Pr)){ screen_df$Pr = Pr }
@@ -111,7 +120,7 @@ vis_logit <- function(out,Pr=NULL,fullUnivariate=FALSE,intercept=TRUE,trans='log
   if(!is.null(out$final)){
     summary_df <- as.data.frame(cbind( exp(cbind(Odds_Ratio = coef(mod1), confint(mod1))) , coef(summary(mod1)) ))
     summary_df$vars = factor( rownames(summary_df) , levels = rownames(summary_df)[order(summary_df$Estimate)] )
-    #summary_df$vars = rownames(summary_df)
+    
     colnames(summary_df)[c(2:3,7)] = c('X2.5','X97.5','Pr')
     
     limits <- aes(ymax = X97.5, ymin=X2.5)
@@ -156,9 +165,15 @@ vis_logit <- function(out,Pr=NULL,fullUnivariate=FALSE,intercept=TRUE,trans='log
       if(!is.na(coef(screen[[i]])[2])){ screen_tmp[[i]] = screen[[i]] }
     }
     screen = screen_tmp
-    screen_df = as.data.frame( cbind( do.call(rbind,lapply(screen,function(x) coef(summary(x))[2,] ) ) , 
-                                      do.call(rbind,lapply(screen,function(x) exp(cbind(Odds_Ratio = coef(x), confint(x)))[2,] ) )
-    ) )
+    if(class(screen[[1]])%in%c('glm','lm')){
+      screen_df = as.data.frame( cbind( do.call(rbind,lapply(screen,function(x) coef(summary(x))[2,] ) ) , 
+                                        do.call(rbind,lapply(screen,function(x) exp(cbind(Odds_Ratio = coef(x), confint(x)))[2,] ) )
+      ) )
+    }else if(class(screen[[1]])%in%c('glmerMod')){
+      screen_df = as.data.frame( cbind( do.call(rbind,lapply(screen,function(x) coef(summary(x))[2,] ) ) , 
+                                        do.call(rbind,lapply(screen,function(x) exp(cbind(Odds_Ratio=coef(summary(x))[,1], confint(x)[-1,]))[2,] ) )
+      ) )
+    }
     screen_df$vars = factor( rownames(screen_df) , levels = rownames(screen_df)[order(screen_df$Estimate)] )
     colnames(screen_df)[c(4,6:7)] = c('Pr', 'X2.5','X97.5')
     if(!is.null(Pr)){ screen_df$Pr = Pr }
