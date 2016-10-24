@@ -72,11 +72,11 @@ vis <- function(out,family='gaussian',Pr=NULL,fullUnivariate=FALSE,intercept=TRU
 #    screen_df = as.data.frame( cbind( do.call(rbind,lapply(screen,function(x) coef(summary(x))[2,]  ) ) , 
 #                                      do.call(rbind,lapply(screen,function(x) cbind(coefficients = coef(x), confint(x))[2,]  ) )
 #    ) )
-    if(class(screen[[1]])%in%c('glm','lm')){
+    if(any(class(screen[[1]])%in%c('glm','lm'))){
       screen_df = as.data.frame( cbind( do.call(rbind,lapply(screen,function(x) coef(summary(x))[2,] ) ) , 
                                         do.call(rbind,lapply(screen,function(x) cbind(coefficients = coef(x), confint(x))[2,] ) )
       ) )
-    }else if(class(screen[[1]])%in%c('glmerMod','lmerMod')){
+    }else if(any(class(screen[[1]])%in%c('glmerMod','lmerMod'))){
       screen_df = as.data.frame( cbind( do.call(rbind,lapply(screen,function(x) coef(summary(x))[2,] ) ) , 
                                         do.call(rbind,lapply(screen,function(x) cbind(coefficients=coef(summary(x))[,1], confint(x)[-1,])[2,] ) )
       ) )
@@ -165,11 +165,11 @@ vis_logit <- function(out,Pr=NULL,fullUnivariate=FALSE,intercept=TRUE,trans='log
       if(!is.na(coef(screen[[i]])[2])){ screen_tmp[[i]] = screen[[i]] }
     }
     screen = screen_tmp
-    if(class(screen[[1]])%in%c('glm','lm')){
+    if(any(class(screen[[1]])%in%c('glm','lm'))){
       screen_df = as.data.frame( cbind( do.call(rbind,lapply(screen,function(x) coef(summary(x))[2,] ) ) , 
                                         do.call(rbind,lapply(screen,function(x) exp(cbind(Odds_Ratio = coef(x), confint(x)))[2,] ) )
       ) )
-    }else if(class(screen[[1]])%in%c('glmerMod','lmerMod')){
+    }else if(any(class(screen[[1]])%in%c('glmerMod','lmerMod'))){
       screen_df = as.data.frame( cbind( do.call(rbind,lapply(screen,function(x) coef(summary(x))[2,] ) ) , 
                                         do.call(rbind,lapply(screen,function(x) exp(cbind(Odds_Ratio=coef(summary(x))[,1], confint(x)[-1,]))[2,] ) )
       ) )
