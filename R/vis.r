@@ -28,9 +28,9 @@ vis <- function(out,family='gaussian',Pr=NULL,fullUnivariate=FALSE,intercept=TRU
     
     limits <- aes(ymax = X97.5, ymin=X2.5)
     if(intercept){
-      p <- ggplot(summary_df, aes(x=vars, y=coefficients,color=-log(Pr,10)))
+      p <- ggplot(summary_df, aes(x=vars, y=coefficients,color=-log(Pr,10))) + geom_hline(yintercept=0)
     }else{
-      p <- ggplot(summary_df[-1,], aes(x=vars, y=coefficients,color=-log(Pr,10)))
+      p <- ggplot(summary_df[-1,], aes(x=vars, y=coefficients,color=-log(Pr,10))) + geom_hline(yintercept=0)
     }
     p <- p + geom_point() + geom_errorbar(limits, width=0.2) + theme(axis.text.x = element_text(angle = 90, hjust = 1))
     p <- p + scale_colour_gradientn(colours=col_scheme) # + scale_y_continuous(trans=trans)
@@ -54,7 +54,7 @@ vis <- function(out,family='gaussian',Pr=NULL,fullUnivariate=FALSE,intercept=TRU
     }
     
     limits <- aes(ymax = X97.5, ymin=X2.5)
-    p <- ggplot(df[-1,], aes(x=vars, y=Odds_Ratio,color=-log(Pr,10))) + facet_wrap(~ var_i)
+    p <- ggplot(df[-1,], aes(x=vars, y=Odds_Ratio,color=-log(Pr,10))) + facet_wrap(~ var_i) + geom_hline(yintercept=0)
     p <- p + geom_point() + geom_errorbar(limits, width=0.2) + theme(axis.text.x = element_text(angle = 90, hjust = 1))
     p <- p + scale_colour_gradientn(colours=col_scheme) # + scale_y_continuous(trans=trans)
     uni = p
@@ -77,7 +77,7 @@ vis <- function(out,family='gaussian',Pr=NULL,fullUnivariate=FALSE,intercept=TRU
     if(!is.null(Pr)){ screen_df$Pr = Pr }
     screen_df = screen_df[order(screen_df$Estimate),]
     limits <- aes(ymax = X97.5, ymin=X2.5)
-    p <- ggplot(screen_df, aes(x=vars, y=coefficients,color=-log(Pr,10)))
+    p <- ggplot(screen_df, aes(x=vars, y=coefficients,color=-log(Pr,10))) + geom_hline(yintercept=0)
     p <- p + geom_point() + geom_errorbar(limits, width=0.2) + theme(axis.text.x = element_text(angle = 90, hjust = 1))
     p <- p + scale_colour_gradientn(colours=col_scheme) # + scale_y_continuous(trans=trans)
     uni = p
@@ -116,9 +116,9 @@ vis_logit <- function(out,Pr=NULL,fullUnivariate=FALSE,intercept=TRUE,trans='log
     
     limits <- aes(ymax = X97.5, ymin=X2.5)
     if(intercept){
-      p <- ggplot(summary_df, aes(x=vars, y=Odds_Ratio,color=-log(Pr,10)))
+      p <- ggplot(summary_df, aes(x=vars, y=Odds_Ratio,color=-log(Pr,10))) + geom_hline(yintercept=1)
     }else{
-      p <- ggplot(summary_df[-1,], aes(x=vars, y=Odds_Ratio,color=-log(Pr,10)))
+      p <- ggplot(summary_df[-1,], aes(x=vars, y=Odds_Ratio,color=-log(Pr,10)))+ geom_hline(yintercept=1)
     }
     p <- p + geom_point() + geom_errorbar(limits, width=0.2) + theme(axis.text.x = element_text(angle = 90, hjust = 1))
     p <- p + scale_y_continuous(trans=trans) + scale_colour_gradientn(colours=col_scheme)
@@ -141,7 +141,7 @@ vis_logit <- function(out,Pr=NULL,fullUnivariate=FALSE,intercept=TRUE,trans='log
     }
     
     limits <- aes(ymax = X97.5, ymin=X2.5)
-    p <- ggplot(df[-1,], aes(x=vars, y=Odds_Ratio,color=-log(Pr,10))) + facet_wrap(~ var_i)
+    p <- ggplot(df[-1,], aes(x=vars, y=Odds_Ratio,color=-log(Pr,10))) + facet_wrap(~ var_i) + geom_hline(yintercept = 1)
     p <- p + geom_point() + geom_errorbar(limits, width=0.2) + theme(axis.text.x = element_text(angle = 90, hjust = 1))
     p <- p + scale_y_continuous(trans=trans) + scale_colour_gradientn(colours=col_scheme)
     uni = p
@@ -164,7 +164,7 @@ vis_logit <- function(out,Pr=NULL,fullUnivariate=FALSE,intercept=TRUE,trans='log
     if(!is.null(Pr)){ screen_df$Pr = Pr }
     screen_df = screen_df[order(screen_df$Estimate),]
     limits <- aes(ymax = X97.5, ymin=X2.5)
-    p <- ggplot(screen_df, aes(x=vars, y=Odds_Ratio,color=-log(Pr,10)))
+    p <- ggplot(screen_df, aes(x=vars, y=Odds_Ratio,color=-log(Pr,10)))+ geom_hline(yintercept=1)
     p <- p + geom_point() + geom_errorbar(limits, width=0.2) + theme(axis.text.x = element_text(angle = 90, hjust = 1))
     p <- p + scale_y_continuous(trans=trans) + scale_colour_gradientn(colours=col_scheme)
     uni = p
