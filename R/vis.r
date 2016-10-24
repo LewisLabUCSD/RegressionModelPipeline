@@ -1,7 +1,7 @@
 #' vis
 #' 
 #' A visualizaiton for univariate and multivariate regressions showing coefficient, confidence intervals and p-values
-#' @param out a length 2 list univariate and final models: list(screen=several_univariate_models,final=one_multivariate_model). Either screen or final may be set to NULL
+#' @param out a length 2 list univariate and final models: list(screen=several_univariate_models,final=one_multivariate_model). Either screen or final may be set to NULL. Accepts: lm, glm, lmer, glmer
 #' @param family a character indicating the glm family fit for the model. If 'binomial' vis_logit will be run. Otherwise standard output is produced.
 #' @param Pr an optional numeric vector of the same length and order as out$screen. If the user wants to specify univariate p-values they may do so here. Otherwise the wald test for the 1st variable in the model will be used.
 #' @param fullUnivariate visualizes all variables in each univariate model
@@ -76,7 +76,7 @@ vis <- function(out,family='gaussian',Pr=NULL,fullUnivariate=FALSE,intercept=TRU
       screen_df = as.data.frame( cbind( do.call(rbind,lapply(screen,function(x) coef(summary(x))[2,] ) ) , 
                                         do.call(rbind,lapply(screen,function(x) cbind(coefficients = coef(x), confint(x))[2,] ) )
       ) )
-    }else if(class(screen[[1]])%in%c('glmerMod')){
+    }else if(class(screen[[1]])%in%c('glmerMod','lmerMod')){
       screen_df = as.data.frame( cbind( do.call(rbind,lapply(screen,function(x) coef(summary(x))[2,] ) ) , 
                                         do.call(rbind,lapply(screen,function(x) cbind(coefficients=coef(summary(x))[,1], confint(x)[-1,])[2,] ) )
       ) )
@@ -100,7 +100,7 @@ vis <- function(out,family='gaussian',Pr=NULL,fullUnivariate=FALSE,intercept=TRU
 #' vis_logit
 #' 
 #' A visualizaiton for logit regressions that calculates Odds Ratios (OR)
-#' @param out a length 2 list univariate and final models: list(screen=several_univariate_models,final=one_multivariate_model). Either screen or final may be set to NULL
+#' @param out a length 2 list univariate and final models: list(screen=several_univariate_models,final=one_multivariate_model). Either screen or final may be set to NULL. Accepts: lm, glm, lmer, glmer
 #' @param Pr an optional numeric vector of the same length and order as out$screen. If the user wants to specify univariate p-values they may do so here. Otherwise the wald test for the 1st variable in the model will be used.
 #' @param fullUnivariate visualizes all variables in each univariate model
 #' @param intercept boolean indicating if the intercept should be visualized. True by default.
@@ -169,7 +169,7 @@ vis_logit <- function(out,Pr=NULL,fullUnivariate=FALSE,intercept=TRUE,trans='log
       screen_df = as.data.frame( cbind( do.call(rbind,lapply(screen,function(x) coef(summary(x))[2,] ) ) , 
                                         do.call(rbind,lapply(screen,function(x) exp(cbind(Odds_Ratio = coef(x), confint(x)))[2,] ) )
       ) )
-    }else if(class(screen[[1]])%in%c('glmerMod')){
+    }else if(class(screen[[1]])%in%c('glmerMod','lmerMod')){
       screen_df = as.data.frame( cbind( do.call(rbind,lapply(screen,function(x) coef(summary(x))[2,] ) ) , 
                                         do.call(rbind,lapply(screen,function(x) exp(cbind(Odds_Ratio=coef(summary(x))[,1], confint(x)[-1,]))[2,] ) )
       ) )
