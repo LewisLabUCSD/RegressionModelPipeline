@@ -100,7 +100,20 @@ model_selection <- function(df,observations,response,family='gaussian',model=glm
 
 #' model_selection_many_to_few
 #' 
-#' Takes many variables and uses a series of regularizations then model selection to pair down to a smaller set
+#' runs regularization then model selection to reduce many variables to a small robust model TODO
+#' @param ..., see model_select parameters
+#' @return a list containing: univariate models, the final selected model, and crossvalidation stats.
+#' @export
+model_selection_many_to_few <- function(...){
+  # run regularization
+  # (optional) run interaction regularization
+  # identify regularization prototype models
+  # for each prototypical model:
+    # while not overfit:
+      # select highest magnitude contributors
+      # univariate screening and backward selection
+  # return prototypical models
+}
 
 #######################################
 ### Run Tests
