@@ -11,6 +11,12 @@
 #' @export
 #' @import ggplot2
 #' @import grDevices
+#' @import MASS
+#' @import fastcluster
+#' @import glmnet
+#' @import reshape
+#' @import data.table
+#' @import easyGgplot2
 vis <- function(out,family='gaussian',Pr=NULL,fullUnivariate=FALSE,intercept=TRUE,col_scheme=rainbow(4),...){
   if(!is.character(family)){stop('family must be a character vector')}
   if(family=='binomial'){ return(vis_logit(out,family,Pr,fullUnivariate,intercept,col_scheme,...)) }
@@ -193,38 +199,107 @@ vis_logit <- function(out,Pr=NULL,fullUnivariate=FALSE,intercept=TRUE,trans='log
 #' Visualize prototypical models for glmnets
 #' @param l_reg list of glmnet.cv objects
 #' @param k number of prototype models to extract
-#' @return most prototypical models
+#' @return a list of the selected most prototypical models, 3 ggplot2 objects visualizing the coefficient, Average(coef.) and Sd(coef.) of l_reg models,
+#'         and 3 matrix for plotting these 3 ggplot2 objects.
 vis_reg <- function(l_reg,k=4){
   # check that l_reg is multiple glmnet.cv objects
-  if(!(length(l_reg)>1 & all(sapply(l_reg,class)=='glmnet.cv'))){stop('l_reg must be multiple glmnet.cv objects')}
+  if(!(length(l_reg)>1 & all(sapply(l_reg,class)=='cv.glmnet'))){stop('l_reg must be multiple glmnet.cv objects')}
   # make matrix of coefficients
-  l=lapply(l_reg,function(x) data.matrix(coef(x,s=x$labda_min+.1*perc_change(x$labda_min,x$lambda_max))))
+  l=lapply(l_reg,function(x) data.matrix(coef(x,s=x$lambda.min+.1*(x$lambda.1se-x$lambda.min))))
   l=lapply(l,function(x) x[order(rownames(x)),])
   m=do.call(rbind,l)
   # cluster
   fit = hclust(dist(m))
   # cut
-  groups = cutree(fit, k=k) # todo, choose k riggerously
+  groups = cutree(fit, k=k) # todo, choose k riggerously 
+                            # Need to think about: how to choose k riggerously?
+  
+
+  # Plot01 - Original version 
   # get average coefficient for each gene in each group
-  m$groups = groups
-  melt_m = melt(m)
-  colnames(melt_m) = c('groups','model_number','gene','coefficient')
-  ggplot(data=melt_m,aes(x=coefficient,y=gene)) + geom_bar() + facet_wrap(~groups)
+  m <- m[,-1]
+  m <- m[,colSums(m^2) !=0]
+  m <- cbind(m,groups)
+  p1 <- getPlot(m, xlab="Models", ylab="Genes", legendname="Coefficient",reorderList=NULL)
+
+  # Plot02 (Average) &  Plot03 (Variance)
+  # get average of coefficient for each gene in each group
+  m2 <- matrix(data = NA, ncol = ncol(m), nrow = k)
+  m3 <- matrix(data = NA, ncol = ncol(m), nrow = k)
+  colnames(m2) <- colnames(m)
+  colnames(m3) <- colnames(m)
+  for(g in 1:k){
+    idx <- which(m[,'groups']==g)
+    m_tmp = m[idx,]
+    if(length(idx) > 1){
+      m2[g,] <- apply(m_tmp,2,mean)
+      m3[g,] <- apply(m_tmp,2,sd)
+    } else {
+      m2[g,] <- m_tmp
+      m3[g,] <- 0
+    }
+  }
+  m3[,'groups'] <- c(1:k)
+
+  p2 <- getPlot(m2, xlab="Model Group", ylab="Genes", 
+                legendname="Avg(coef)",reorderList=p1$reorderList)
+  p3 <- getPlot(m3, xlab="Model Group", ylab="Genes", 
+                legendname="Sd(coef)",reorderList=p1$reorderList)
   
   # return k models that are the centroids (most average) of each major cluster
   sel_return=list()
-  for(g in groups){
-    m_tmp = m[,g==groups]
-    mean = apply(m_tmp,2,mean) #avg for each gene coefficient
-    sd = apply(m_tmp,2,sd) #avg for each gene coefficient
-    z = apply(m_tmp,1,function(x) sum(abs((x-mean)/sd)) )
-    indx_tmp = which.min(z)
-    # change back to original index -> indx
-    sel_return[[g]] = l_reg[[indx]]
+  for(g in 1:k){
+    idx <- which(m[,'groups']==g)
+    m_tmp = m[idx,]
+    if(length(idx) > 1){
+      m_tmp <- m_tmp[, !(colnames(m_tmp) %in% c("groups"))]
+      m_tmp <- m_tmp[,colSums(m_tmp^2) !=0]
+      mean = apply(m_tmp,2,mean) #avg for each gene coefficient
+      sd = apply(m_tmp,2,sd) #var for each gene coefficient
+      z = apply(m_tmp,1,function(x) sum(abs((x-mean)/sd)) )
+      indx_tmp = which.min(z)
+      # change back to original index -> indx
+      indx = idx[indx_tmp]
+      sel_return[[g]] = l_reg[[indx]]
+    } else {
+      indx = idx[1]
+      sel_return[[g]] = l_reg[[indx]]
+    }
   }
-  return(sel_return)
+  return(list(sel_return=sel_return, 
+              m=m,m2=m2,m3=m3,
+              p1=p1$p,p2=p2$p,p3=p3$p))
 }
 
+getPlot <- function(m, xlab, ylab, legendname,reorderList=NULL){
+  m.dt <- as.data.table(m)
+  m.dt[,model_number:= rownames(m.dt)]
+  melt_m <- melt(m.dt, id.vars = c('groups','model_number'))
+  colnames(melt_m) = c('groups','model_number','gene','coefficient')
+  if(is.null(reorderList)){
+    melt_m$gene <- reorder(melt_m$gene,melt_m$coefficient)
+    reorderList <- levels(melt_m$gene)
+  } else {
+    melt_m$gene <- factor(melt_m$gene , levels = reorderList)
+  }
+  base_size <- 12
+  p <- ggplot(data=melt_m, aes(x=model_number,y=gene)) + 
+    geom_tile(aes(fill = coefficient)) +
+    scale_fill_gradient2(name = legendname, 
+                         low = "blue", high = "red", mid = "white", midpoint = 0) +
+    theme_grey(base_size = base_size) + 
+    labs(x = xlab, y = ylab) +
+    facet_grid(  .~groups, scales = "free", space = "free" ) +
+    theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+    theme(
+      axis.text.x = element_blank(),
+      axis.ticks.x = element_blank(),
+      axis.ticks.y = element_blank(),
+      panel.border = element_rect(colour = "black", fill=NA, size=.5),
+      axis.text.y = element_text(size = base_size * .7, 
+                                 angle = 0, hjust = 0, colour = "black"))
+  return(list(p=p,reorderList=reorderList))
+}
 
 #' loading_vis
 #' 
@@ -251,3 +326,6 @@ loading_vis<-function(res.pca,var_catgories=NULL){
     facet_wrap(~PC,nrow=1) # + theme(axis.text.x = element_text(angle = 90, hjust = 1,size=5))
   g
 }
+
+
+
