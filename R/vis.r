@@ -194,6 +194,38 @@ vis_logit <- function(out,Pr=NULL,fullUnivariate=FALSE,intercept=TRUE,trans='log
   return(list(multivar=multi,univar=uni))
 }
 
+#' vis_coef_matrix
+#' 
+#' Visualize a prototypical model from a matrix of coefficients
+#' @param coefL list of numeric matrix [models x coefficients]
+#' @return ggplot object of the coefficients
+#' @import reshape
+#' @import ggplot2
+vis_coef_matrix<- function(coefL){
+  m_all = NULL
+  for(m_i in 1:length(coefL)){
+    m = melt( coefL[[m_i]] ) 
+    colnames(m) = c('model','variable','coefficent')
+    var_p = aggregate(m$coefficent, by=list(variable=m$variable), FUN=function(x) 2*pnorm(-abs( (mean(x,na.rm=TRUE)-0)/var(x,na.rm=TRUE) )) )
+    colnames(var_p) = c('variable','Pr_W')
+    m = merge(m,var_p,by='variable')
+    m$prototype = m_i
+    if(is.null(m_all)){
+      m_all = m
+    }else{
+      m_all = rbind(m,m_all)
+    }
+  }
+
+  ggplot(data=m_all,aes(x=variable,y=coefficent,fill=-log(Pr_W,10)))+geom_boxplot(width=.45 ) +coord_flip()+ facet_grid(~prototype)+
+    scale_fill_gradient2(high = "red", low = "white") + geom_vline(xintercept = 0)
+}
+
+test<-function(n=5,m=5){
+  matL=list(mat=matrix(rnorm(m*n),m,n,dimnames=list(1:m,letters[1:n])),mat=matrix(rnorm(m*n),m,n,dimnames=list(1:m,letters[1:n])),mat=matrix(rnorm(m*n),m,n,dimnames=list(1:m,letters[1:n])),mat=matrix(rnorm(m*n),m,n,dimnames=list(1:m,letters[1:n])))
+  vis_coef_matrix(matL)
+}
+
 #' vis_reg
 #' 
 #' Visualize prototypical models for glmnets
