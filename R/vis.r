@@ -201,12 +201,14 @@ vis_logit <- function(out,Pr=NULL,fullUnivariate=FALSE,intercept=TRUE,trans='log
 #' @return ggplot object of the coefficients
 #' @import reshape
 #' @import ggplot2
-vis_coef_matrix<- function(coefL){
+vis_coef_matrix<- function(coefL,reorderList=NULL){
   m_all = NULL
   for(m_i in 1:length(coefL)){
     m = melt( coefL[[m_i]] ) 
     colnames(m) = c('model','variable','coefficent')
-    var_p = aggregate(m$coefficent, by=list(variable=m$variable), FUN=function(x) 2*pnorm(-abs( (mean(x,na.rm=TRUE)-0)/var(x,na.rm=TRUE) )) )
+    var_p = aggregate(m$coefficent, by=list(variable=m$variable), 
+                      #FUN=function(x) 2*pnorm(-abs( (mean(x,na.rm=TRUE)-0)/sd(x,na.rm=TRUE) )) )
+                      FUN=function(x) sd(x,na.rm=TRUE)/mean(x,na.rm=TRUE) )
     colnames(var_p) = c('variable','Pr_W')
     m = merge(m,var_p,by='variable')
     m$prototype = m_i
@@ -217,13 +219,31 @@ vis_coef_matrix<- function(coefL){
     }
   }
 
-  ggplot(data=m_all,aes(x=variable,y=coefficent,fill=-log(Pr_W,10)))+geom_boxplot(width=.45 ) +coord_flip()+ facet_grid(~prototype)+
-    scale_fill_gradient2(high = "red", low = "white") + geom_vline(xintercept = 0)
+  m_all$Pr_W <- -log(m_all$Pr_W,10)
+  m_all$Pr_W[is.nan(m_all$Pr_W)] <- 0
+  m_all$Pr_W[is.infinite(m_all$Pr_W)] <- 0
+  m_all$variable <- as.character(m_all$variable)
+  if(is.null(reorderList)){
+    m_all$variable <- reorder(m_all$variable,m_all$coefficent)
+    reorderList <- levels(m_all$variable)
+  } else {
+    m_all$variable <- factor(m_all$variable , levels = reorderList)
+  }
+  
+  p <- ggplot(data=m_all,aes(x=variable,y=coefficent,fill=Pr_W))+
+       geom_boxplot(width=.45, outlier.size = 0.25 ) +coord_flip()+ facet_grid(~prototype)+
+       scale_fill_gradient2(high = "red", low = "white") + 
+       geom_hline(yintercept = 0)
+  
+  return(list(p=p,m=m_all))
 }
 
-test<-function(n=5,m=5){
-  matL=list(mat=matrix(rnorm(m*n),m,n,dimnames=list(1:m,letters[1:n])),mat=matrix(rnorm(m*n),m,n,dimnames=list(1:m,letters[1:n])),mat=matrix(rnorm(m*n),m,n,dimnames=list(1:m,letters[1:n])),mat=matrix(rnorm(m*n),m,n,dimnames=list(1:m,letters[1:n])))
-  vis_coef_matrix(matL)
+test<-function(n=25,m=25){
+  matL=list(mat=matrix(rnorm(m*n),m,n,dimnames=list(1:m,1:n)),
+            mat=matrix(rnorm(m*n),m,n,dimnames=list(1:m,1:n)),
+            mat=matrix(rnorm(m*n),m,n,dimnames=list(1:m,1:n)),
+            mat=matrix(rnorm(m*n),m,n,dimnames=list(1:m,1:n)))
+  p <- vis_coef_matrix(matL)
 }
 
 #' vis_reg
@@ -251,9 +271,26 @@ vis_reg <- function(l_reg,k=4){
   # get average coefficient for each gene in each group
   m <- m[,-1]
   m <- m[,colSums(m^2) !=0]
+  
+  matL <- list()
+  for(g in 1:k){
+    idx <- which(groups==g)
+    if(length(idx)==1){
+      mat1 <- matrix(data = NA, ncol = ncol(m), nrow = 1)
+      mat1[1,] <- m[idx,] 
+      colnames(mat1) <- colnames(m)
+      matL[[g]] <- mat1
+    } else {
+      matL[[g]] <- m[idx,]
+    }
+    #dimnames(matL[[g]]) = list(idx, colnames(m))
+  }
+  
   m <- cbind(m,groups)
   p1 <- getPlot(m, xlab="Models", ylab="Genes", legendname="Coefficient",reorderList=NULL)
-
+  #p2 <- vis_coef_matrix(matL,reorderList=p1$reorderList)
+  p2 <- vis_coef_matrix(matL)
+  
   # Plot02 (Average) &  Plot03 (Variance)
   # get average of coefficient for each gene in each group
   m2 <- matrix(data = NA, ncol = ncol(m), nrow = k)
@@ -273,8 +310,8 @@ vis_reg <- function(l_reg,k=4){
   }
   m3[,'groups'] <- c(1:k)
 
-  p2 <- getPlot(m2, xlab="Model Group", ylab="Genes", 
-                legendname="Avg(coef)",reorderList=p1$reorderList)
+  #p2 <- getPlot(m2, xlab="Model Group", ylab="Genes", 
+  #              legendname="Avg(coef)",reorderList=p1$reorderList)
   p3 <- getPlot(m3, xlab="Model Group", ylab="Genes", 
                 legendname="Sd(coef)",reorderList=p1$reorderList)
   
@@ -299,7 +336,7 @@ vis_reg <- function(l_reg,k=4){
     }
   }
   return(list(sel_return=sel_return, 
-              m=m,m2=m2,m3=m3,
+              m=m,m2=p2$m,m3=m3,
               p1=p1$p,p2=p2$p,p3=p3$p))
 }
 
