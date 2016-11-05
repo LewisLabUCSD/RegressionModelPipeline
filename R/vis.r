@@ -198,17 +198,43 @@ vis_logit <- function(out,Pr=NULL,fullUnivariate=FALSE,intercept=TRUE,trans='log
 #' 
 #' Visualize a prototypical model from a matrix of coefficients
 #' @param coefL list of numeric matrix [models x coefficients]
+#' @param family family of regression model to determine appropriate variance
+#' @param reorderList ??
 #' @return ggplot object of the coefficients
 #' @import reshape
 #' @import ggplot2
-vis_coef_matrix<- function(coefL,reorderList=NULL){
+vis_coef_matrix<- function(coefL,family,reorderList=NULL){
   m_all = NULL
   for(m_i in 1:length(coefL)){
     m = melt( coefL[[m_i]] ) 
     colnames(m) = c('model','variable','coefficent')
     var_p = aggregate(m$coefficent, by=list(variable=m$variable), 
-                      #FUN=function(x) 2*pnorm(-abs( (mean(x,na.rm=TRUE)-0)/sd(x,na.rm=TRUE) )) )
-                      FUN=function(x) sd(x,na.rm=TRUE)/mean(x,na.rm=TRUE) )
+                      FUN=function(x){
+                        #p1 <- 1L:p
+                        #Qr <- qr.lm(object)
+                        #coef.p <- object$coefficients[Qr$pivot[p1]]
+                        coef.p <- coef(mod)
+                        #covmat.unscaled <- chol2inv(Qr$qr[p1, p1, drop = FALSE])
+                        #dimnames(covmat.unscaled) <- list(names(coef.p), names(coef.p))
+                        #covmat <- dispersion * covmat.unscaled
+                        #var.cf <- diag(covmat)
+                        var.cf <- diag((sum((y-predict(mod))^2)/(dim(X)[1]-dim(X)[2]))*(solve(t(X)%*%X))) 
+                        s.err <- sqrt(var.cf)
+                        tvalue <- coef.p/s.err
+                        dn <- c("Estimate", "Std. Error")
+                        if (family=='binomial') {
+                          pvalue <- 2 * pnorm(-abs(tvalue))
+                          coef.table <- cbind(coef.p, s.err, tvalue, pvalue)
+                          dimnames(coef.table) <- list(names(coef.p), c(dn, 
+                                                                        "z value", "Pr(>|z|)"))
+                        }
+                        else {
+                          pvalue <- 2 * pt(-abs(tvalue), df.r)
+                          coef.table <- cbind(coef.p, s.err, tvalue, pvalue)
+                          dimnames(coef.table) <- list(names(coef.p), c(dn, 
+                                                                        "t value", "Pr(>|t|)"))
+                        }
+                        })
     colnames(var_p) = c('variable','Pr_W')
     m = merge(m,var_p,by='variable')
     m$prototype = m_i
