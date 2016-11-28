@@ -198,44 +198,20 @@ vis_logit <- function(out,Pr=NULL,fullUnivariate=FALSE,intercept=TRUE,trans='log
 #' 
 #' Visualize a prototypical model from a matrix of coefficients
 #' @param coefL list of numeric matrix [models x coefficients]
-#' @param family family of regression model to determine appropriate variance
-#' @param reorderList ??
+#' @param reorderList an ordered gene list that makes all the plots have the same gene order
 #' @return ggplot object of the coefficients
 #' @import reshape
 #' @import ggplot2
-vis_coef_matrix<- function(coefL,family,reorderList=NULL){
+vis_coef_matrix<- function(coefL,reorderList=NULL){
   m_all = NULL
   for(m_i in 1:length(coefL)){
     m = melt( coefL[[m_i]] ) 
     colnames(m) = c('model','variable','coefficent')
+    
+    ### Coefficient of variation
     var_p = aggregate(m$coefficent, by=list(variable=m$variable), 
-                      FUN=function(x){
-                        #p1 <- 1L:p
-                        #Qr <- qr.lm(object)
-                        #coef.p <- object$coefficients[Qr$pivot[p1]]
-                        coef.p <- coef(mod)
-                        #covmat.unscaled <- chol2inv(Qr$qr[p1, p1, drop = FALSE])
-                        #dimnames(covmat.unscaled) <- list(names(coef.p), names(coef.p))
-                        #covmat <- dispersion * covmat.unscaled
-                        #var.cf <- diag(covmat)
-                        var.cf <- diag((sum((y-predict(mod))^2)/(dim(X)[1]-dim(X)[2]))*(solve(t(X)%*%X))) 
-                        s.err <- sqrt(var.cf)
-                        tvalue <- coef.p/s.err
-                        dn <- c("Estimate", "Std. Error")
-                        if (family=='binomial') {
-                          pvalue <- 2 * pnorm(-abs(tvalue))
-                          coef.table <- cbind(coef.p, s.err, tvalue, pvalue)
-                          dimnames(coef.table) <- list(names(coef.p), c(dn, 
-                                                                        "z value", "Pr(>|z|)"))
-                        }
-                        else {
-                          pvalue <- 2 * pt(-abs(tvalue), df.r)
-                          coef.table <- cbind(coef.p, s.err, tvalue, pvalue)
-                          dimnames(coef.table) <- list(names(coef.p), c(dn, 
-                                                                        "t value", "Pr(>|t|)"))
-                        }
-                        })
-    colnames(var_p) = c('variable','Pr_W')
+                      FUN=function(x) sd(x,na.rm=TRUE)/mean(x,na.rm=TRUE) )
+    colnames(var_p) = c('variable','CV_W')
     m = merge(m,var_p,by='variable')
     m$prototype = m_i
     if(is.null(m_all)){
@@ -245,9 +221,9 @@ vis_coef_matrix<- function(coefL,family,reorderList=NULL){
     }
   }
 
-  m_all$Pr_W <- -log(m_all$Pr_W,10)
-  m_all$Pr_W[is.nan(m_all$Pr_W)] <- 0
-  m_all$Pr_W[is.infinite(m_all$Pr_W)] <- 0
+  m_all$CV_W <- -log(m_all$CV_W,10)
+  m_all$CV_W[is.nan(m_all$CV_W)] <- 0
+  m_all$CV_W[is.infinite(m_all$CV_W)] <- 0
   m_all$variable <- as.character(m_all$variable)
   if(is.null(reorderList)){
     m_all$variable <- reorder(m_all$variable,m_all$coefficent)
@@ -256,7 +232,7 @@ vis_coef_matrix<- function(coefL,family,reorderList=NULL){
     m_all$variable <- factor(m_all$variable , levels = reorderList)
   }
   
-  p <- ggplot(data=m_all,aes(x=variable,y=coefficent,fill=Pr_W))+
+  p <- ggplot(data=m_all,aes(x=variable,y=coefficent,fill=CV_W))+
        geom_boxplot(width=.45, outlier.size = 0.25 ) +coord_flip()+ facet_grid(~prototype)+
        scale_fill_gradient2(high = "red", low = "white") + 
        geom_hline(yintercept = 0)
@@ -264,13 +240,13 @@ vis_coef_matrix<- function(coefL,family,reorderList=NULL){
   return(list(p=p,m=m_all))
 }
 
-test<-function(n=25,m=25){
-  matL=list(mat=matrix(rnorm(m*n),m,n,dimnames=list(1:m,1:n)),
-            mat=matrix(rnorm(m*n),m,n,dimnames=list(1:m,1:n)),
-            mat=matrix(rnorm(m*n),m,n,dimnames=list(1:m,1:n)),
-            mat=matrix(rnorm(m*n),m,n,dimnames=list(1:m,1:n)))
-  p <- vis_coef_matrix(matL)
-}
+#test<-function(n=25,m=25){
+#  matL=list(mat=matrix(rnorm(m*n),m,n,dimnames=list(1:m,1:n)),
+#            mat=matrix(rnorm(m*n),m,n,dimnames=list(1:m,1:n)),
+#            mat=matrix(rnorm(m*n),m,n,dimnames=list(1:m,1:n)),
+#            mat=matrix(rnorm(m*n),m,n,dimnames=list(1:m,1:n)))
+#  p <- vis_coef_matrix(matL)
+#}
 
 #' vis_reg
 #' 
@@ -314,32 +290,52 @@ vis_reg <- function(l_reg,k=4){
   
   m <- cbind(m,groups)
   p1 <- getPlot(m, xlab="Models", ylab="Genes", legendname="Coefficient",reorderList=NULL)
-  #p2 <- vis_coef_matrix(matL,reorderList=p1$reorderList)
-  p2 <- vis_coef_matrix(matL)
+  p2 <- vis_coef_matrix(matL,reorderList=p1$reorderList)
+  #p2 <- vis_coef_matrix(matL)
   
   # Plot02 (Average) &  Plot03 (Variance)
   # get average of coefficient for each gene in each group
   m2 <- matrix(data = NA, ncol = ncol(m), nrow = k)
   m3 <- matrix(data = NA, ncol = ncol(m), nrow = k)
+  m4 <- matrix(data = NA, ncol = ncol(m), nrow = k)
   colnames(m2) <- colnames(m)
   colnames(m3) <- colnames(m)
+  colnames(m4) <- colnames(m)
   for(g in 1:k){
     idx <- which(m[,'groups']==g)
     m_tmp = m[idx,]
     if(length(idx) > 1){
       m2[g,] <- apply(m_tmp,2,mean)
       m3[g,] <- apply(m_tmp,2,sd)
+      
+      ### F Test
+      # F = variance between treatment / variance within treatment
+      for(i in 1:dim(m)[2]){
+        within  <- m_tmp[,i]
+        between <- m[,i]
+        #F_test <- var.test(between,within)
+        if(sd(within)==0){
+          F_test <- sd(between)
+        } else {
+          F_test <- sd(between)/sd(within)
+        }
+        m4[g,i] <- F_test
+      }
     } else {
       m2[g,] <- m_tmp
       m3[g,] <- 0
+      m4[g,] <- 0
     }
   }
   m3[,'groups'] <- c(1:k)
-
+  m4[,'groups'] <- c(1:k)
+  
   #p2 <- getPlot(m2, xlab="Model Group", ylab="Genes", 
   #              legendname="Avg(coef)",reorderList=p1$reorderList)
   p3 <- getPlot(m3, xlab="Model Group", ylab="Genes", 
                 legendname="Sd(coef)",reorderList=p1$reorderList)
+  p4 <- getPlot(m4, xlab="Model Group", ylab="Genes", 
+                legendname="F(coef)",reorderList=p1$reorderList)
   
   # return k models that are the centroids (most average) of each major cluster
   sel_return=list()
@@ -361,9 +357,10 @@ vis_reg <- function(l_reg,k=4){
       sel_return[[g]] = l_reg[[indx]]
     }
   }
+  
   return(list(sel_return=sel_return, 
               m=m,m2=p2$m,m3=m3,
-              p1=p1$p,p2=p2$p,p3=p3$p))
+              p1=p1$p,p2=p2$p,p3=p3$p,p4=p4$p))
 }
 
 getPlot <- function(m, xlab, ylab, legendname,reorderList=NULL){

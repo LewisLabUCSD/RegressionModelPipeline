@@ -43,6 +43,7 @@ visResults <- vis_reg(mod,k=4)
 #vv <- test(n=35,m=35)
 #vv$p  
 #visResults$p1
-ggplot2.multiplot(visResults$p2,visResults$p3, cols=2)
+#ggplot2.multiplot(visResults$p2,visResults$p3, cols=2)
+ggplot2.multiplot(visResults$p3,visResults$p4, cols=2)
 
 
