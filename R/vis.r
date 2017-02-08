@@ -248,32 +248,51 @@ vis_coef_matrix<- function(coefL,reorderList=NULL){
 #  p <- vis_coef_matrix(matL)
 #}
 
-#' vis_reg
-#' 
-#' Visualize prototypical models for glmnets
+#' getReturnModels
+#'
 #' @param l_reg list of glmnet.cv objects
+#' @param m matrix of coefficients
 #' @param k number of prototype models to extract
-#' @return a list of the selected most prototypical models, 3 ggplot2 objects visualizing the coefficient, Average(coef.) and Sd(coef.) of l_reg models,
-#'         and 3 matrix for plotting these 3 ggplot2 objects.
-vis_reg <- function(l_reg,k=4){
-  # check that l_reg is multiple glmnet.cv objects
-  if(!(length(l_reg)>1 & all(sapply(l_reg,class)=='cv.glmnet'))){stop('l_reg must be multiple glmnet.cv objects')}
-  # make matrix of coefficients
-  l=lapply(l_reg,function(x) data.matrix(coef(x,s=x$lambda.min+.1*(x$lambda.1se-x$lambda.min))))
-  l=lapply(l,function(x) x[order(rownames(x)),])
-  m=do.call(rbind,l)
-  # cluster
-  fit = hclust(dist(m))
-  # cut
-  groups = cutree(fit, k=k) # todo, choose k riggerously 
-                            # Need to think about: how to choose k riggerously?
-  
+#'
+#' @return sel_return k models that are the centroids (most average) of each major cluster
+getReturnModels <- function(l_reg, m, k){
+  # return k models that are the centroids (most average) of each major cluster
+  sel_return=list()
+  for(g in 1:k){
+    idx <- which(m[,'groups']==g)
+    m_tmp = m[idx,]
+    if(length(idx) > 1){
+      m_tmp <- m_tmp[, !(colnames(m_tmp) %in% c("groups"))]
+      m_tmp <- m_tmp[,colSums(m_tmp^2) !=0]
+      mean = apply(m_tmp,2,mean) #avg for each gene coefficient
+      sd = apply(m_tmp,2,sd) #var for each gene coefficient
+      z = apply(m_tmp,1,function(x) sum(abs((x-mean)/sd)) )
+      indx_tmp = which.min(z)
+      # change back to original index -> indx
+      indx = idx[indx_tmp]
+      sel_return[[g]] = l_reg[[indx]]
+    } else {
+      indx = idx[1]
+      sel_return[[g]] = l_reg[[indx]]
+    }
+  }
+  return(sel_return)
+}
 
-  # Plot01 - Original version 
-  # get average coefficient for each gene in each group
+#' getGroupedMatrix
+#'
+#' @param m matrix of coefficients
+#' @param k number of prototype models to extract
+#' @param groups group information (based on hierarchical tree)
+#'
+#' @return m raw coefficient matrix with grouped information
+#' @return matL grouped coefficient matrix
+getGroupedMatrix <- function(m,k,groups){
+  # remove genes/predictors without any weight
   m <- m[,-1]
   m <- m[,colSums(m^2) !=0]
   
+  # group genes/predictors
   matL <- list()
   for(g in 1:k){
     idx <- which(groups==g)
@@ -285,15 +304,23 @@ vis_reg <- function(l_reg,k=4){
     } else {
       matL[[g]] <- m[idx,]
     }
-    #dimnames(matL[[g]]) = list(idx, colnames(m))
   }
   
+  # add grouping information to genes/predictors
   m <- cbind(m,groups)
-  p1 <- getPlot(m, xlab="Models", ylab="Genes", legendname="Coefficient",reorderList=NULL)
-  p2 <- vis_coef_matrix(matL,reorderList=p1$reorderList)
-  #p2 <- vis_coef_matrix(matL)
-  
-  # Plot02 (Average) &  Plot03 (Variance)
+  return(list(m=m,matL=matL))
+}
+
+#' getStatMatrix
+#'
+#' @param m matrix of coefficients
+#' @param k number of prototype models to extract
+#' @param groups group information (based on hierarchical tree)
+#'
+#' @return m2 The matrix with average value of each group
+#' @return m3 The matrix with variance of each group
+#' @return m4 The matrix with F-score of each group
+getStatMatrix <- function(m,k,groups){
   # get average of coefficient for each gene in each group
   m2 <- matrix(data = NA, ncol = ncol(m), nrow = k)
   m3 <- matrix(data = NA, ncol = ncol(m), nrow = k)
@@ -330,33 +357,60 @@ vis_reg <- function(l_reg,k=4){
   m3[,'groups'] <- c(1:k)
   m4[,'groups'] <- c(1:k)
   
+  return(list(m2=m2,m3=m3,m4=m4))
+}
+
+#' vis_reg
+#' 
+#' Visualize prototypical models for glmnets
+#' @param l_reg list of glmnet.cv objects
+#' @param k number of prototype models to extract
+#' @return a list of the selected most prototypical models, 3 ggplot2 objects visualizing the coefficient, Average(coef.) and Sd(coef.) of l_reg models,
+#'         and 3 matrix for plotting these 3 ggplot2 objects.
+vis_reg <- function(l_reg,k=4){
+  # check that l_reg is multiple glmnet.cv objects
+  if(!(length(l_reg)>1 & all(sapply(l_reg,class)=='cv.glmnet'))){stop('l_reg must be multiple glmnet.cv objects')}
+  # make matrix of coefficients
+  l=lapply(l_reg,function(x) data.matrix(coef(x,s=x$lambda.min+.1*(x$lambda.1se-x$lambda.min))))
+  l=lapply(l,function(x) x[order(rownames(x)),])
+  m=do.call(rbind,l)
+  # cluster
+  fit = hclust(dist(m))
+  # cut
+  groups = cutree(fit, k=k) # todo, choose k riggerously 
+                            # Need to think about: how to choose k riggerously?
+
+  ## get grouped information for coefficient matrix
+  res <- getGroupedMatrix(m=m,k=k,groups=groups)
+
+  # Plot01 - Heatmap of raw coefficient matrix with group
+  m <- res$m
+  p1 <- getPlot(m, xlab="Models", ylab="Genes", legendname="Coefficient",reorderList=NULL)
+
+  # Plot02 - Boxplot of grouped coefficient matrix
+  matL <- res$matL
+  p2 <- vis_coef_matrix(matL,reorderList=p1$reorderList)
+
+  # get statistics of grouped coefficient of matrix
+  StatMatrix <- getStatMatrix(m,k,groups)
+  
+  # Plot02 Average
+  #m2 <- StatMatrix$m2  
   #p2 <- getPlot(m2, xlab="Model Group", ylab="Genes", 
   #              legendname="Avg(coef)",reorderList=p1$reorderList)
+
+  # Plot03 Variance
+  m3 <- StatMatrix$m3  
   p3 <- getPlot(m3, xlab="Model Group", ylab="Genes", 
                 legendname="Sd(coef)",reorderList=p1$reorderList)
+
+  # Plot04 F-score
+  m4 <- StatMatrix$m4  
   p4 <- getPlot(m4, xlab="Model Group", ylab="Genes", 
                 legendname="F(coef)",reorderList=p1$reorderList)
   
-  # return k models that are the centroids (most average) of each major cluster
-  sel_return=list()
-  for(g in 1:k){
-    idx <- which(m[,'groups']==g)
-    m_tmp = m[idx,]
-    if(length(idx) > 1){
-      m_tmp <- m_tmp[, !(colnames(m_tmp) %in% c("groups"))]
-      m_tmp <- m_tmp[,colSums(m_tmp^2) !=0]
-      mean = apply(m_tmp,2,mean) #avg for each gene coefficient
-      sd = apply(m_tmp,2,sd) #var for each gene coefficient
-      z = apply(m_tmp,1,function(x) sum(abs((x-mean)/sd)) )
-      indx_tmp = which.min(z)
-      # change back to original index -> indx
-      indx = idx[indx_tmp]
-      sel_return[[g]] = l_reg[[indx]]
-    } else {
-      indx = idx[1]
-      sel_return[[g]] = l_reg[[indx]]
-    }
-  }
+  ## get k return models that are the centroids (most average) of each major cluster
+  sel_return <- getReturnModels(l_reg=l_reg, m=m , k=k)
   
   return(list(sel_return=sel_return, 
               m=m,m2=p2$m,m3=m3,

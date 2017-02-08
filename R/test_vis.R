@@ -37,14 +37,14 @@ source("R/multivariate_model.r")
 
 ##-----------------------------------------------------------
 # test example
-#load(paste0('~/Desktop/FDA_Austin/VirusRegModels_run2.Rda'))
-#mod <- PredResult[['mod']]
-#visResults <- vis_reg(mod,k=4)
+load(paste0('~/Desktop/2017 UCSD/01_Project/Project02-FDAvirus/04_Regression/VirusRegModels_run2.Rda'))
+mod <- PredResult[['mod']]
+visResults <- vis_reg(mod,k=4)
 
 #vv <- test(n=35,m=35)
 #vv$p  
-#visResults$p1
-#ggplot2.multiplot(visResults$p2,visResults$p3, cols=2)
-#ggplot2.multiplot(visResults$p3,visResults$p4, cols=2)
+visResults$p1
+ggplot2.multiplot(visResults$p2,visResults$p3, cols=2)
+ggplot2.multiplot(visResults$p3,visResults$p4, cols=2)
 
 
