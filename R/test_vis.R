@@ -1,6 +1,10 @@
 ##----- Austin
-rm(list=ls())
-setwd("~/GitHub/RegressionModelPipeline/")
+#rm(list=ls())
+#setwd("~/GitHub/RegressionModelPipeline/")
+
+
+#### NOT RUN
+if(F){
 
 #install.packages("devtools")
 library(devtools)
@@ -47,4 +51,4 @@ visResults$p1
 ggplot2.multiplot(visResults$p2,visResults$p3, cols=2)
 ggplot2.multiplot(visResults$p3,visResults$p4, cols=2)
 
-
+}
