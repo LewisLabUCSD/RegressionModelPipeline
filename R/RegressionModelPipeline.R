@@ -25,7 +25,7 @@
 #' print(out[[2]])
 #' @import glmnet
 #' @import glinternet
-model_selection <- function(df,observations,response,family='gaussian',model=glm,interactions=FALSE,test=c('Wald','LRT'),thresh_screen=.2,only_return_selected=FALSE,K=10,sig_vars_thresh=NULL,robust=FALSE,N=1){
+model_selection <- function(df,observations,response,family='gaussian',model=glm,interactions=FALSE,test=c('Wald','LRT'),thresh_screen=.2,only_return_selected=FALSE,K=10,sig_vars_thresh=NULL,robust=FALSE,N=1,aic_k=2){
   if(length(response)!=1){stop('use multiresponse_model_selection()')}
   if(!test%in%c('Wald','LRT')){stop("test is not in c(Wald,LRT)")}
   #if(!interactions%in%c('signif','none','all')){stop("interactions is not in c(signif,none,all)")}
@@ -58,7 +58,7 @@ model_selection <- function(df,observations,response,family='gaussian',model=glm
   }
   # construct multivariate models
   if(length(obs_sign) < sig_vars_thresh$model_sel_additive){
-    selected_model = stepwise_multivariate_model_selection(df,obs_sign,response,family,model,interactions)
+    selected_model = stepwise_multivariate_model_selection(df,obs_sign,response,family,model,interactions,aic_k=aic_k)
   }else{
     if(robust){ # run glmnet several times
       selected_model_list = list()

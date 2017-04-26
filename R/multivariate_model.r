@@ -11,18 +11,18 @@
 #' @export 
 #' 
 #' @importFrom MASS stepAIC
-stepwise_multivariate_model_selection <- function(df,observations,response,family,model,interactions=FALSE){
+stepwise_multivariate_model_selection <- function(df,observations,response,family,model,interactions=FALSE,aic_k=2){
   observations = na.omit(observations)
   if(length(observations)<=2){stop('There are fewer than 2 observations presented to the final model. The screening threshold is likely too severe')}
   f<-as.formula(paste(response,' ~ ',paste(observations,collapse='+'),sep=''))
   #	dbg <<- list(df,observations,response,f)
   df_tmp <- na.omit(df[,c(observations,response)])
-  mod <- model(f,family=family,data=df_tmp )
+  mod <- model(f,family=family,data=df_tmp ,...)
   if(interactions){
     f_inter<-as.formula(paste(' ~ ',paste(observations,collapse='*'),sep=''))
-    step <- stepAIC(mod, direction="both",scope=list(upper=f_inter,lower=~1))
+    step <- stepAIC(mod, direction="both",scope=list(upper=f_inter,lower=~1),k=aic_k)
   }else{
-    step <- stepAIC(mod, direction="backward")
+    step <- stepAIC(mod, direction="backward",k=aic_k)
   }
   return(step)
 }
