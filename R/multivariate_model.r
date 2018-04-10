@@ -11,7 +11,7 @@
 #' @export 
 #' 
 #' @importFrom MASS stepAIC
-stepwise_multivariate_model_selection <- function(df,observations,response,family,model,interactions=FALSE,aic_k=2){
+stepwise_multivariate_model_selection <- function(df,observations,response,family,model,interactions=FALSE,aic_k=2,...){
   observations = na.omit(observations)
   if(length(observations)<=2){stop('There are fewer than 2 observations presented to the final model. The screening threshold is likely too severe')}
   f<-as.formula(paste(response,' ~ ',paste(observations,collapse='+'),sep=''))

@@ -13,6 +13,8 @@ install_github("bkellman/RegressionModelPipeline")
 
 To get started, load the library
 ``` R
+library(MASS)
+library(ggplot2)
 library(RegressionModelPipeline)
 ```
 

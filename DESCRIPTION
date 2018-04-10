@@ -1,10 +1,11 @@
 Package: RegressionModelPipeline
 Type: Package
-Title: What the package does (short line)
+Title: Pipeline for feature selection, interaction assessment, regression modeling and prediction assessment for 1-1000s of features
 Version: 1.0
 Date: 2016-07-20
-Author: Who wrote it
-Maintainer: Who to complain to <yourfault@somewhere.net>
-Description: More about what it does (maybe more than one line)
+Author: Ben Kellman <bkellman@eng.ucsd.edu>
+Maintainer: Ben Kellman <bkellman@eng.ucsd.edu>
+Description: MASS, ROCR, data.table, ggplot2, glinternet, glmnet, reshape
 License: What license is it under?
-RoxygenNote: 5.0.1
+RoxygenNote: 6.0.1
+Imports: MASS, ROCR, data.table, ggplot2, glinternet, glmnet, grDevices, reshape
