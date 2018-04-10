@@ -17,4 +17,3 @@ a ggplot2 object showing the loadings of the
 \description{
 Visualize loadings of a PCA
 }
-

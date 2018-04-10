@@ -5,7 +5,7 @@
 \title{stepwise_multivariate_model_selection}
 \usage{
 stepwise_multivariate_model_selection(df, observations, response, family, model,
-  interactions = FALSE)
+  interactions = FALSE, aic_k = 2, ...)
 }
 \arguments{
 \item{df, }{a data.frame containing response and observations variables. Factors with more than 2 levels have only been implimented for test='LRT'}
@@ -26,4 +26,3 @@ a multivariate model
 \description{
 Multivariate model selection on all (significant) observations variables with respect to response.
 }
-

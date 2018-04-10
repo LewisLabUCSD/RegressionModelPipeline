@@ -7,7 +7,7 @@
 model_selection(df, observations, response, family = "gaussian",
   model = glm, interactions = FALSE, test = c("Wald", "LRT"),
   thresh_screen = 0.2, only_return_selected = FALSE, K = 10,
-  sig_vars_thresh = NULL)
+  sig_vars_thresh = NULL, robust = FALSE, N = 1, aic_k = 2)
 }
 \arguments{
 \item{df, }{a data.frame containing response and observations variables. Factors with more than 2 levels have only been implimented for test='LRT'}
@@ -31,6 +31,10 @@ model_selection(df, observations, response, family = "gaussian",
 \item{K, }{a numeric value indicating the number of folds to use for k-fold cross-validation. K=10 by default. K=0 to skip k-fold validation.}
 
 \item{sig_vars_thresh}{a list specifying the maximal number of significant variables allowed for each final model generating method. NULL (self initializing) by default.}
+
+\item{robust}{boolean indicating if regularization will be run multiple times to get a robust indication of the underlying structure}
+
+\item{N, }{a numeric value, default N=1, indicating the number of cross validation iterations to perform}
 }
 \value{
 a list containing: univariate models, the final selected model, and crossvalidation stats.
@@ -44,4 +48,3 @@ out=vis(mod)
 print(out[[1]])
 print(out[[2]])
 }
-

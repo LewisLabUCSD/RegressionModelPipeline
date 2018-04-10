@@ -35,4 +35,3 @@ a list of univariate models, attr(,'Pr') houses the significance of each model
 \description{
 Run univariate models on all observations variables with respect to response. Asseses p-value of model given LRT or Wald test. Returns all models or just models more significant than the given threshold: thresh.
 }
-

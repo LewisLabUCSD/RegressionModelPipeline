@@ -5,7 +5,7 @@
 \title{cross_valid_kfold}
 \usage{
 cross_assess_wrapper(data, formula, resp, family, K, model,
-  cv_function = cross_valid_kfold)
+  cv_function = cross_valid_kfold, N = 1)
 }
 \arguments{
 \item{data, }{a data.frame containing response and observations variables used in the formula.}
@@ -21,6 +21,8 @@ cross_assess_wrapper(data, formula, resp, family, K, model,
 \item{model, }{a model associated for testing the variables c(glm,lm)}
 
 \item{cv_function, }{a crossvalidation function with the same inputs/outputs as cross_valid_kfold}
+
+\item{N, }{a numeric value indicating the number of times to run cross-validation}
 }
 \value{
 list of performance assessments
@@ -28,4 +30,3 @@ list of performance assessments
 \description{
 MAIN cross validation function. Includes performance assessment. Runs and assesses crossvalidation.
 }
-

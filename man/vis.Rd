@@ -8,7 +8,7 @@ vis(out, family = "gaussian", Pr = NULL, fullUnivariate = FALSE,
   intercept = TRUE, col_scheme = rainbow(4), ...)
 }
 \arguments{
-\item{out}{a length 2 list univariate and final models: list(screen=several_univariate_models,final=one_multivariate_model). Either screen or final may be set to NULL}
+\item{out}{a length 2 list univariate and final models: list(screen=several_univariate_models,final=one_multivariate_model). Either screen or final may be set to NULL. Accepts: lm, glm, lmer, glmer}
 
 \item{family}{a character indicating the glm family fit for the model. If 'binomial' vis_logit will be run. Otherwise standard output is produced.}
 
@@ -26,4 +26,3 @@ a list of 2 ggplot2 objects visualizing the univariate screening and multivariat
 \description{
 A visualizaiton for univariate and multivariate regressions showing coefficient, confidence intervals and p-values
 }
-

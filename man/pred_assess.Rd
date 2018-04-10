@@ -24,4 +24,3 @@ list of performance assessments
 \description{
 MAIN cross validation assessment. There are 2 main usage modes. 1) provide predictions by setting pred and truth, 2) provide mod and dat to generate predictions to evaluate.
 }
-

@@ -8,7 +8,7 @@ vis_logit(out, Pr = NULL, fullUnivariate = FALSE, intercept = TRUE,
   trans = "log2", col_scheme = rainbow(4))
 }
 \arguments{
-\item{out}{a length 2 list univariate and final models: list(screen=several_univariate_models,final=one_multivariate_model). Either screen or final may be set to NULL}
+\item{out}{a length 2 list univariate and final models: list(screen=several_univariate_models,final=one_multivariate_model). Either screen or final may be set to NULL. Accepts: lm, glm, lmer, glmer}
 
 \item{Pr}{an optional numeric vector of the same length and order as out$screen. If the user wants to specify univariate p-values they may do so here. Otherwise the wald test for the 1st variable in the model will be used.}
 
@@ -26,4 +26,3 @@ a list of 2 ggplot2 objects visualizing the univariate screening and multivariat
 \description{
 A visualizaiton for logit regressions that calculates Odds Ratios (OR)
 }
-

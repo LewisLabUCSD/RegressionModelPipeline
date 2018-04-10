@@ -5,7 +5,7 @@
 \title{cross_valid_kfold}
 \usage{
 cross_valid_kfold(data, formula, resp = all.vars(formula)[1], family,
-  K = 10, model = glm)
+  K = 10, model = glm, N = 1)
 }
 \arguments{
 \item{data, }{a data.frame containing response and observations variables used in the formula.}
@@ -19,6 +19,8 @@ cross_valid_kfold(data, formula, resp = all.vars(formula)[1], family,
 \item{K, }{a numeric variable indicating the number of folds for the k-fold validation}
 
 \item{model, }{a model associated for testing the variables c(glm,lm)}
+
+\item{N, }{a numeric value indicating the number of times to run cross-validation}
 }
 \value{
 list of cross-validation results: pred_out matrix of predictions (observations x fold), train_out matrix of indicies used for each fold of cross-validation (observations x fold), labels_out matrix of ground truth labels (observations x fold)
@@ -26,4 +28,3 @@ list of cross-validation results: pred_out matrix of predictions (observations x
 \description{
 k-fold cross validation run to collect predictions for assessment
 }
-
