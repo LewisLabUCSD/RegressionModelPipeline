@@ -6,7 +6,7 @@ Pipeline for feature selection, interaction assessment, regression modeling and 
 install.packages("devtools")
 library(devtools)
 
-install_github("bkellman/RegressionModelPipeline")
+install_github("LewisLabUCSD/RegressionModelPipeline")
 ```
 
 # Quickstart
