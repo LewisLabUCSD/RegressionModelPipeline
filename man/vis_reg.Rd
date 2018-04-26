@@ -12,8 +12,7 @@ vis_reg(l_reg, k = 4)
 \item{k}{number of prototype models to extract}
 }
 \value{
-a list of the selected most prototypical models, 3 ggplot2 objects visualizing the coefficient, Average(coef.) and Sd(coef.) of l_reg models,
-        and 3 matrix for plotting these 3 ggplot2 objects.
+a list of the selected most prototypical models, 3 ggplot2 objects visualizing the coefficient, Average(coef.) and Sd(coef.) of l_reg models, and 3 matrix for plotting these 3 ggplot2 objects.
 }
 \description{
 Visualize prototypical models for glmnets

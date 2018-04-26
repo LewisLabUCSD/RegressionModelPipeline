@@ -365,8 +365,8 @@ getStatMatrix <- function(m,k,groups){
 #' Visualize prototypical models for glmnets
 #' @param l_reg list of glmnet.cv objects
 #' @param k number of prototype models to extract
-#' @return a list of the selected most prototypical models, 3 ggplot2 objects visualizing the coefficient, Average(coef.) and Sd(coef.) of l_reg models,
-#'         and 3 matrix for plotting these 3 ggplot2 objects.
+#' @return a list of the selected most prototypical models, 3 ggplot2 objects visualizing the coefficient, Average(coef.) and Sd(coef.) of l_reg models, and 3 matrix for plotting these 3 ggplot2 objects.
+#' @export
 vis_reg <- function(l_reg,k=4){
   # check that l_reg is multiple glmnet.cv objects
   if(!(length(l_reg)>1 & all(sapply(l_reg,class)=='cv.glmnet'))){stop('l_reg must be multiple glmnet.cv objects')}
