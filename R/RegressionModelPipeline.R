@@ -97,6 +97,7 @@ model_selection <- function(df,observations,response,family='gaussian',model=glm
     if(robust){
       # multi-model characterization
       selected_model = vis_reg(selected_model_list)
+      cv = list(auc=selected_model_list[[1]]$cvm[selected_model_list[[1]]$lambda==selected_model_list[[1]]$lambda.min],other_stats=selected_model_list[[1]])
     }else{
       # cross validation for regularization
       plot(selected_model)
