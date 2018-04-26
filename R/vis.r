@@ -232,9 +232,11 @@ vis_coef_matrix<- function(coefL,reorderList=NULL){
     m_all$variable <- factor(m_all$variable , levels = reorderList)
   }
   
-  p <- ggplot(data=m_all,aes(x=variable,y=coefficent,fill=CV_W))+
-       geom_boxplot(width=.45, outlier.size = 0.25 ) +coord_flip()+ facet_grid(~prototype)+
-       scale_fill_gradient2(high = "red", low = "white") + 
+  p <- ggplot(data=m_all,aes(x=variable,y=coefficent,color=CV_W))+
+       geom_boxplot(width=.45, outlier.size = 0.25 ) + 
+       coord_flip()+ facet_grid(~prototype)+
+       #scale_color_gradient2(high = "red", low = "white") + 
+       scale_fill_gradient2(low = "blue", high = "red", mid = "white", midpoint = 0) +
        geom_hline(yintercept = 0)
   
   return(list(p=p,m=m_all))
@@ -407,7 +409,7 @@ vis_reg <- function(l_reg,k=4){
   # Plot04 F-score
   m4 <- StatMatrix$m4  
   p4 <- getPlot(m4, xlab="Model Group", ylab="Genes", 
-                legendname="F(coef)",reorderList=p1$reorderList)
+                legendname="F(coef)",reorderList=p1$reorderList) #,trans='log10')
   
   ## get k return models that are the centroids (most average) of each major cluster
   sel_return <- getReturnModels(l_reg=l_reg, m=m , k=k)
@@ -417,7 +419,7 @@ vis_reg <- function(l_reg,k=4){
               p1=p1$p,p2=p2$p,p3=p3$p,p4=p4$p))
 }
 
-getPlot <- function(m, xlab, ylab, legendname,reorderList=NULL){
+getPlot <- function(m, xlab, ylab, legendname,reorderList=NULL){ #,tans='identity'){
   m.dt <- as.data.table(m)
   m.dt[,model_number:= rownames(m.dt)]
   melt_m <- melt(m.dt, id.vars = c('groups','model_number'))
@@ -431,7 +433,7 @@ getPlot <- function(m, xlab, ylab, legendname,reorderList=NULL){
   base_size <- 12
   p <- ggplot(data=melt_m, aes(x=model_number,y=gene)) + 
     geom_tile(aes(fill = coefficient)) +
-    scale_fill_gradient2(name = legendname, 
+    scale_fill_gradient2(name = legendname, #trans=trans,
                          low = "blue", high = "red", mid = "white", midpoint = 0) +
     theme_grey(base_size = base_size) + 
     labs(x = xlab, y = ylab) +
@@ -444,6 +446,7 @@ getPlot <- function(m, xlab, ylab, legendname,reorderList=NULL){
       panel.border = element_rect(colour = "black", fill=NA, size=.5),
       axis.text.y = element_text(size = base_size * .7, 
                                  angle = 0, hjust = 0, colour = "black"))
+
   return(list(p=p,reorderList=reorderList))
 }
 
