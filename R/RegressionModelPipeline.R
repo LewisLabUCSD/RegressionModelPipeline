@@ -55,6 +55,15 @@ model_selection <- function(df,observations,response,family='gaussian',model=glm
       glm_reg = cv.glmnet
       print('additive model: regularization')
     }
+  }else{
+    if(interactions){
+      #glm_reg = glinternet ## not yet implimented
+      glm_reg = cv.glmnet
+      print('interactive model: regularization (UNDER CONSTRUCTION)')
+    }else{
+      glm_reg = cv.glmnet
+      print('additive model: regularization')
+    }
   }
   # construct multivariate models
   if(length(obs_sign) < sig_vars_thresh$model_sel_additive){
