@@ -115,7 +115,7 @@ model_selection <- function(df,observations,response,family='gaussian',model=glm
 #' runs regularization then model selection to reduce many variables to a small robust model TODO: Austin and Ben w/ vis_reg
 #' @param ..., see model_select parameters
 #' @return a list containing: univariate models, the final selected model, and crossvalidation stats.
-#' @export
+#' 
 model_selection_many_to_few <- function(...){
   # run regularization
   # (optional) run interaction regularization
