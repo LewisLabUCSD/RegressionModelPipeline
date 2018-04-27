@@ -236,7 +236,7 @@ vis_coef_matrix<- function(coefL,reorderList=NULL){
        geom_boxplot(width=.45, outlier.size = 0.25 ) + 
        coord_flip()+ facet_grid(~prototype)+
        #scale_color_gradient2(high = "red", low = "white") + 
-       scale_fill_gradient2(low = "blue", high = "red", mid = "white", midpoint = 0) +
+       scale_color_gradient2(low = "blue", high = "red", mid = "white", midpoint = 0) +
        geom_hline(yintercept = 0)
   
   return(list(p=p,m=m_all))
@@ -346,7 +346,7 @@ getStatMatrix <- function(m,k,groups){
         if(sd(within)==0){
           F_test <- sd(between)
         } else {
-          F_test <- sd(between)/sd(within)
+          F_test <- sd(between)/sd(within) ### is this the correct calculation? https://en.wikipedia.org/wiki/F-test
         }
         m4[g,i] <- F_test
       }
