@@ -341,15 +341,20 @@ getStatMatrix <- function(m,k,groups){
       ### F Test
       # F = variance between treatment / variance within treatment
       for(i in 1:dim(m)[2]){
-        within  <- m_tmp[,i]
-        between <- m[,i]
+        coefs  <- m_tmp[,i]
+        W_test = (coef-mean(coef))/sd(coef)
+        pW = min(pnorm(W_test),1-pnorm(W_test))
+#        between <- m[,i]
         #F_test <- var.test(between,within)
-        if(sd(within)==0){
-          F_test <- sd(between)
-        } else {
-          F_test <- sd(between)/sd(within) ### is this the correct calculation? https://en.wikipedia.org/wiki/F-test
-        }
-        m4[g,i] <- F_test
+#        if(sd(within)==0){
+          #F_test <- sd(between)
+#          F_test <- NA
+#        } else {
+#          F_stat <- sd(between)/sd(within) ### is this the correct calculation? https://en.wikipedia.org/wiki/F-test
+#        }
+#        m4[g,i] <- F_test
+        m4[g,i] = -log(pW,10)
+        warning('vis_reg uses a psudo Wald test. Future Implimentations will use the HDI package')
       }
     } else {
       m2[g,] <- m_tmp
@@ -410,7 +415,7 @@ vis_reg <- function(l_reg,k=4){
   # Plot04 F-score
   m4 <- StatMatrix$m4  
   p4 <- getPlot(m4, xlab="Model Group", ylab="Genes", 
-                legendname="F(coef)",reorderList=p1$reorderList) #,trans='log10')
+                legendname="-log10(Wald)",reorderList=p1$reorderList) #,trans='log10')
   
   ## get k return models that are the centroids (most average) of each major cluster
   sel_return <- getReturnModels(l_reg=l_reg, m=m , k=k)
