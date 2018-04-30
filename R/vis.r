@@ -221,7 +221,8 @@ vis_coef_matrix<- function(coefL,reorderList=NULL){
     }
   }
 
-  m_all$CV_W <- -log(m_all$CV_W,10)
+#  m_all$CV_W <- -log(m_all$CV_W,10)
+#  m_all$CV_W <- sign(m_all$CV_W) * log(abs(m_all$CV_W),10)
   m_all$CV_W[is.nan(m_all$CV_W)] <- 0
   m_all$CV_W[is.infinite(m_all$CV_W)] <- 0
   m_all$variable <- as.character(m_all$variable)
