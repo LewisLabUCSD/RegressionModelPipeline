@@ -233,7 +233,7 @@ vis_coef_matrix<- function(coefL,reorderList=NULL){
     m_all$variable <- factor(m_all$variable , levels = reorderList)
   }
   
-  p <- ggplot(data=m_all,aes(x=variable,y=coefficent,color=CV_W))+
+  p <- ggplot(data=m_all,aes(x=variable,y=coefficent))+ #,color=CV_W))+
        geom_boxplot(width=.45, outlier.size = 0.25 ) + 
        coord_flip()+ facet_grid(~prototype)+
        #scale_color_gradient2(high = "red", low = "white") + 
@@ -342,16 +342,17 @@ getStatMatrix <- function(m,k,groups){
       # F = variance between treatment / variance within treatment
       for(i in 1:dim(m)[2]){
         coefs  <- m_tmp[,i]
-        W_test = (coef-mean(coef))/sd(coef)
-        pW = min(pnorm(W_test),1-pnorm(W_test))
 #        between <- m[,i]
         #F_test <- var.test(between,within)
-#        if(sd(within)==0){
+        if(sd(coefs)==0){
           #F_test <- sd(between)
 #          F_test <- NA
-#        } else {
+          pW=1
+        } else {
 #          F_stat <- sd(between)/sd(within) ### is this the correct calculation? https://en.wikipedia.org/wiki/F-test
-#        }
+          W_test = (coefs-mean(coefs,na.rm = T))/sd(coefs,na.rm=T)
+          pW = min(pnorm(W_test),1-pnorm(W_test))
+        }
 #        m4[g,i] <- F_test
         m4[g,i] = -log(pW,10)
         warning('vis_reg uses a psudo Wald test. Future Implimentations will use the HDI package')
