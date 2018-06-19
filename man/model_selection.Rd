@@ -8,7 +8,7 @@ model_selection(df, observations, response, family = "gaussian",
   model = glm, interactions = FALSE, test = c("Wald", "LRT"),
   thresh_screen = 0.2, only_return_selected = FALSE, K = 10,
   sig_vars_thresh = NULL, robust = FALSE, N = 1, aic_k = 2,
-  robust_n = 100)
+  robust_n = 100, alpha = 1)
 }
 \arguments{
 \item{df, }{a data.frame containing response and observations variables. Factors with more than 2 levels have only been implimented for test='LRT'}
@@ -38,6 +38,8 @@ model_selection(df, observations, response, family = "gaussian",
 \item{N, }{a numeric value, default N=1, indicating the number of cross validation iterations to perform}
 
 \item{robust_n, }{number of iterations for the robust glmnet run}
+
+\item{alpha, }{alpha parameter if glmnet is used for a regularization method}
 }
 \value{
 a list containing: univariate models, the final selected model, and crossvalidation stats.

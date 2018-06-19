@@ -17,6 +17,7 @@
 #' @param robust boolean indicating if regularization will be run multiple times to get a robust indication of the underlying structure
 #' @param N, a numeric value, default N=1, indicating the number of cross validation iterations to perform
 #' @param robust_n, number of iterations for the robust glmnet run
+#' @param alpha, alpha parameter if glmnet is used for a regularization method
 #' @return a list containing: univariate models, the final selected model, and crossvalidation stats.
 #' @export
 #' @examples
@@ -27,7 +28,7 @@
 #' @import glmnet
 #' @import glinternet
 model_selection <- function(df,observations,response,family='gaussian',model=glm,interactions=FALSE,test=c('Wald','LRT'),
-                            thresh_screen=.2,only_return_selected=FALSE,K=10,sig_vars_thresh=NULL,robust=FALSE,N=1,aic_k=2,robust_n=100){
+                            thresh_screen=.2,only_return_selected=FALSE,K=10,sig_vars_thresh=NULL,robust=FALSE,N=1,aic_k=2,robust_n=100,alpha=1){
   if(length(response)!=1){stop('use multiresponse_model_selection()')}
   if(!test%in%c('Wald','LRT')){stop("test is not in c(Wald,LRT)")}
   #if(!interactions%in%c('signif','none','all')){stop("interactions is not in c(signif,none,all)")}
@@ -36,7 +37,7 @@ model_selection <- function(df,observations,response,family='gaussian',model=glm
   }
   
   # Univariate Screen
-  observationsL <<- univariate_screen(df,observations,response,family,model,interactions,test,thresh=thresh_screen,only_return_selected=only_return_selected)
+  observationsL = univariate_screen(df,observations,response,family,model,interactions,test,thresh=thresh_screen,only_return_selected=only_return_selected)
   
   # Multivariate Model
   obs_sign = na.omit( names(observationsL)[attr(observationsL,'Pr')<thresh_screen] )
@@ -76,10 +77,10 @@ model_selection <- function(df,observations,response,family='gaussian',model=glm
       for(i in 1:robust_n){
         indx = sample(1:nrow(df)) # randomize 
         indy = sample(1:length(obs_sign)) # randomize 
-        selected_model_list[[i]] = glm_reg(y=df[indx,response],x=data.matrix(df[indx,obs_sign[indy]]),family=family) ## untested
+        selected_model_list[[i]] = glm_reg(y=df[indx,response],x=data.matrix(df[indx,obs_sign[indy]]),family=family,alpha=alpha) ## untested
       }
     }else{
-      selected_model = glm_reg(y=df[,response],x=data.matrix(df[,obs_sign]),family=family) ## untested
+      selected_model = glm_reg(y=df[,response],x=data.matrix(df[,obs_sign]),family=family,alpha=alpha) ## untested
     }
   }
   if(length(obs_sign) > sig_vars_thresh$glmnet_additive){
